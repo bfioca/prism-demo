@@ -228,6 +228,8 @@ export const ThinkingMessage = ({ message = 'Thinking...' }: { message?: string 
 
   if (!message.trim()) return null;
 
+  const words = message.split(' ');
+
   return (
     <motion.div
       className="w-full mx-auto max-w-3xl px-4 group/message"
@@ -249,8 +251,8 @@ export const ThinkingMessage = ({ message = 'Thinking...' }: { message?: string 
 
         <div className="flex flex-col gap-2 w-full justify-center min-h-[32px]">
           <div className="flex flex-col gap-4 text-muted-foreground">
-            <div className="flex gap-[2px]">
-              {message.split('').map((char, i) => (
+            <div className="flex gap-1">
+              {words.map((word, i) => (
                 <motion.span
                   key={i}
                   animate={{
@@ -259,11 +261,11 @@ export const ThinkingMessage = ({ message = 'Thinking...' }: { message?: string 
                   transition={{
                     duration: 1.5,
                     repeat: Infinity,
-                    delay: i * 0.05,
+                    delay: i * 0.15,
                     ease: "easeInOut"
                   }}
                 >
-                  {char}
+                  {word}
                 </motion.span>
               ))}
             </div>
