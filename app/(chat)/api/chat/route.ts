@@ -108,7 +108,7 @@ export async function POST(request: Request) {
           content: userMessageId,
         });
 
-        dataStream.writeData({ status: 'Getting responses from each perspective...' });
+        dataStream.writeData({ type: 'thinking', content: '(1/5) Getting responses from each perspective...' });
 
         // 1. Get responses from each perspective
         const perspectiveResponses = await Promise.all(perspectivePrompts.map(async (prompt) => {
@@ -125,7 +125,7 @@ export async function POST(request: Request) {
         console.info('All perspectives responses:', perspectiveResponses);
 
         // 2. Synthesize the responses
-        dataStream.writeData({ status: 'Synthesizing the responses...' });
+        dataStream.writeData({ type: 'thinking', content:  '(2/5) Synthesizing the responses...' });
         const firstPassResponse = await generateText({
           model: customModel(model.apiIdentifier),
           messages: [
@@ -142,7 +142,7 @@ export async function POST(request: Request) {
         });
 
         console.info('Synthesized text:', firstPassResponse.text);
-        dataStream.writeData({ status: 'Evaluating the first pass response...' });
+        dataStream.writeData({ type: 'thinking', content:  '(3/5) Evaluating the first pass response...' });
 
         // 3. Evaluate first pass response
         const evaluationResponses = await Promise.all(conflictPromptMaps.map(async (promptMap) => {
@@ -157,7 +157,7 @@ export async function POST(request: Request) {
         }));
 
         console.info('Evaluation responses:', evaluationResponses);
-        dataStream.writeData({ status: 'Mediating the responses...' });
+        dataStream.writeData({ type: 'thinking', content:  '(4/5) Mediating the responses...' });
 
         const mediationPrompt = multiPerspectiveMediationPrompt(
           messages[messages.length - 1].content as string,
@@ -174,7 +174,7 @@ export async function POST(request: Request) {
         });
 
         console.info('Mediation result:', mediationResult.text);
-        dataStream.writeData({ status: 'Synthesizing final response...' });
+        dataStream.writeData({ type: 'thinking', content:  '(5/5) Synthesizing final response...' });
 
         const finalPrompt = finalSynthesisPrompt(
           messages[messages.length - 1].content as string,
@@ -192,6 +192,9 @@ export async function POST(request: Request) {
             isEnabled: true,
             functionId: 'stream-text',
           },
+          onChunk: (chunk) => {
+            dataStream.writeData({ type: 'thinking', content: '' });
+          }
         });
 
         finalResult.mergeIntoDataStream(dataStream);

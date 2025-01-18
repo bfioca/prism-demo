@@ -1,10 +1,15 @@
-import { PreviewMessage } from './message';
+import { PreviewMessage, ThinkingMessage } from './message';
 import { useScrollToBottom } from './use-scroll-to-bottom';
 import { Vote } from '@/lib/db/schema';
 import { ChatRequestOptions, Message } from 'ai';
-import { memo } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import equal from 'fast-deep-equal';
 import { UIBlock } from './block';
+
+type DataStreamDelta = {
+  type: 'thinking' | string;
+  content: string;
+};
 
 interface BlockMessagesProps {
   chatId: string;
@@ -19,6 +24,7 @@ interface BlockMessagesProps {
   ) => Promise<string | null | undefined>;
   isReadonly: boolean;
   blockStatus: UIBlock['status'];
+  dataStream?: any[];
 }
 
 function PureBlockMessages({
@@ -29,9 +35,27 @@ function PureBlockMessages({
   setMessages,
   reload,
   isReadonly,
+  blockStatus,
+  dataStream,
 }: BlockMessagesProps) {
   const [messagesContainerRef, messagesEndRef] =
     useScrollToBottom<HTMLDivElement>();
+
+  const [thinkingMessage, setThinkingMessage] = useState<string>('Thinking...');
+  const lastProcessedIndex = useRef(-1);
+
+  useEffect(() => {
+    if (!dataStream?.length) return;
+
+    const newDeltas = dataStream.slice(lastProcessedIndex.current + 1);
+    lastProcessedIndex.current = dataStream.length - 1;
+
+    (newDeltas as DataStreamDelta[]).forEach((delta: DataStreamDelta) => {
+      if (delta.type === 'thinking') {
+        setThinkingMessage(delta.content);
+      }
+    });
+  }, [dataStream]);
 
   return (
     <div
@@ -55,6 +79,10 @@ function PureBlockMessages({
         />
       ))}
 
+      {isLoading && blockStatus === 'streaming' && (
+        <ThinkingMessage message={thinkingMessage} />
+      )}
+
       <div
         ref={messagesEndRef}
         className="shrink-0 min-w-[24px] min-h-[24px]"
@@ -63,22 +91,12 @@ function PureBlockMessages({
   );
 }
 
-function areEqual(
-  prevProps: BlockMessagesProps,
-  nextProps: BlockMessagesProps,
-) {
-  if (
-    prevProps.blockStatus === 'streaming' &&
-    nextProps.blockStatus === 'streaming'
-  )
-    return true;
-
+export const BlockMessages = memo(PureBlockMessages, (prevProps, nextProps) => {
   if (prevProps.isLoading !== nextProps.isLoading) return false;
-  if (prevProps.isLoading && nextProps.isLoading) return false;
-  if (prevProps.messages.length !== nextProps.messages.length) return false;
+  if (prevProps.blockStatus !== nextProps.blockStatus) return false;
   if (!equal(prevProps.votes, nextProps.votes)) return false;
+  if (!equal(prevProps.messages, nextProps.messages)) return false;
+  if (!equal(prevProps.dataStream, nextProps.dataStream)) return false;
 
   return true;
-}
-
-export const BlockMessages = memo(PureBlockMessages, areEqual);
+});

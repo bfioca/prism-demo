@@ -78,6 +78,7 @@ function PureBlock({
   reload,
   votes,
   isReadonly,
+  dataStream,
 }: {
   chatId: string;
   input: string;
@@ -103,6 +104,7 @@ function PureBlock({
     chatRequestOptions?: ChatRequestOptions,
   ) => Promise<string | null | undefined>;
   isReadonly: boolean;
+  dataStream: any;
 }) {
   const { block, setBlock } = useBlock();
 
@@ -334,6 +336,7 @@ function PureBlock({
                   reload={reload}
                   isReadonly={isReadonly}
                   blockStatus={block.status}
+                  dataStream={dataStream}
                 />
 
                 <form className="flex flex-row gap-2 relative items-end w-full px-4 pb-4">

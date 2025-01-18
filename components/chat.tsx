@@ -43,6 +43,7 @@ export function Chat({
     isLoading,
     stop,
     reload,
+    data: dataStream,
   } = useChat({
     id,
     body: { id, modelId: selectedModelId, mode: mode },
@@ -82,6 +83,7 @@ export function Chat({
           reload={reload}
           isReadonly={isReadonly}
           isBlockVisible={isBlockVisible}
+          dataStream={dataStream}
         />
 
         <form className="flex mx-auto px-4 bg-background pb-4 md:pb-6 gap-2 w-full md:max-w-3xl">
@@ -112,6 +114,7 @@ export function Chat({
         stop={stop}
         attachments={attachments}
         setAttachments={setAttachments}
+        dataStream={dataStream}
         append={append}
         messages={messages}
         setMessages={setMessages}

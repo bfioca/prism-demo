@@ -1,12 +1,13 @@
 'use client';
 
 import { useChat } from 'ai/react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BlockKind } from './block';
 import { Suggestion } from '@/lib/db/schema';
 import { initialBlockData, useBlock } from '@/hooks/use-block';
 import { useUserMessageId } from '@/hooks/use-user-message-id';
 import { cx } from 'class-variance-authority';
+import { ThinkingMessage } from './message';
 
 type DataStreamDelta = {
   type:
@@ -18,7 +19,8 @@ type DataStreamDelta = {
     | 'clear'
     | 'finish'
     | 'user-message-id'
-    | 'kind';
+    | 'kind'
+    | 'thinking';
   content: string | Suggestion;
 };
 
@@ -106,6 +108,13 @@ export function DataStreamHandler({ id }: { id: string }) {
               status: 'idle',
             };
 
+          case 'thinking':
+            return {
+              ...draftBlock,
+              thinkingMessage: delta.content as string,
+              status: 'streaming',
+            };
+
           default:
             return draftBlock;
         }
@@ -114,4 +123,28 @@ export function DataStreamHandler({ id }: { id: string }) {
   }, [dataStream, setBlock, setUserMessageIdFromServer]);
 
   return null;
+}
+
+export function ChatStreamHandler({
+  dataStream
+}: {
+  dataStream: any[] | undefined
+}) {
+  const lastProcessedIndex = useRef(-1);
+  const [thinkingMessage, setThinkingMessage] = useState<string>('Thinking...');
+
+  useEffect(() => {
+    if (!dataStream?.length) return;
+
+    const newDeltas = dataStream.slice(lastProcessedIndex.current + 1);
+    lastProcessedIndex.current = dataStream.length - 1;
+
+    (newDeltas as DataStreamDelta[]).forEach((delta: DataStreamDelta) => {
+      if (delta.type === 'thinking') {
+        setThinkingMessage(delta.content as string);
+      }
+    });
+  }, [dataStream]);
+
+  return <ThinkingMessage message={thinkingMessage} />;
 }

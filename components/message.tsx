@@ -223,12 +223,14 @@ export const PreviewMessage = memo(
   },
 );
 
-export const ThinkingMessage = () => {
+export const ThinkingMessage = ({ message = 'Thinking...' }: { message?: string }) => {
   const role = 'assistant';
+
+  if (!message.trim()) return null;
 
   return (
     <motion.div
-      className="w-full mx-auto max-w-3xl px-4 group/message "
+      className="w-full mx-auto max-w-3xl px-4 group/message"
       initial={{ y: 5, opacity: 0 }}
       animate={{ y: 0, opacity: 1, transition: { delay: 1 } }}
       data-role={role}
@@ -245,9 +247,26 @@ export const ThinkingMessage = () => {
           <SparklesIcon size={14} />
         </div>
 
-        <div className="flex flex-col gap-2 w-full">
+        <div className="flex flex-col gap-2 w-full justify-center min-h-[32px]">
           <div className="flex flex-col gap-4 text-muted-foreground">
-            Thinking...
+            <div className="flex gap-[2px]">
+              {message.split('').map((char, i) => (
+                <motion.span
+                  key={i}
+                  animate={{
+                    opacity: [0.7, 1, 0.7],
+                  }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    delay: i * 0.05,
+                    ease: "easeInOut"
+                  }}
+                >
+                  {char}
+                </motion.span>
+              ))}
+            </div>
           </div>
         </div>
       </div>
