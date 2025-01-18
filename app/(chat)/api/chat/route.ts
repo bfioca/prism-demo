@@ -102,7 +102,7 @@ export async function POST(request: Request) {
 
   if (mode === 'prism') {
     return createDataStreamResponse({
-      execute: (dataStream) => {
+      execute: async (dataStream) => {
         dataStream.writeData({
           type: 'user-message-id',
           content: userMessageId,
@@ -111,92 +111,90 @@ export async function POST(request: Request) {
         dataStream.writeData({ status: 'Getting responses from each perspective...' });
 
         // 1. Get responses from each perspective
-        Promise.all(perspectivePrompts.map(async (prompt) => {
+        const perspectiveResponses = await Promise.all(perspectivePrompts.map(async (prompt) => {
           console.info('Generating text for perspective...');
           const { text } = await generateText({
             model: customModel(model.apiIdentifier),
             messages: [{ role: 'system', content: prompt }, ...messages],
             temperature: 0.2,
           });
-
           console.info('Generated text for perspective:', text);
           return text;
-        })).then((perspectiveResponses) => {
-          console.info('All perspectives responses:', perspectiveResponses);
+        }));
 
-          // 2. Synthesize the responses
-          dataStream.writeData({ status: 'Synthesizing the responses...' });
-          const text = generateText({
-            model: customModel(model.apiIdentifier),
-            messages: [
-              {
-                role: 'system',
-                content: multiPerspectiveSynthesisPrompt(
-                  messages[messages.length - 1].content as string,
-                  perspectiveResponses
-                )
-              },
-              ...messages
-            ],
-            temperature: 0.2,
-          }).then((firstPassResponse) => {
-            console.info('Synthesized text:', firstPassResponse.text);
-            dataStream.writeData({ status: 'Evaluating the first pass response...' });
+        console.info('All perspectives responses:', perspectiveResponses);
 
-            // 3. Evaluate first pass response
-            Promise.all(conflictPromptMaps.map(async (promptMap) => {
-              console.info('Generating text for evaluation pass...');
-              const { text } = await generateText({
-                model: customModel(model.apiIdentifier),
-                messages: [{ role: 'system', content: promptMap.prompt }, ...messages],
-                temperature: 0.2,
-              });
-
-              console.info('Generated text for evaluation:', text);
-              return {text, perspective: promptMap.perspective};
-            })).then((evaluationResponses) => {
-              console.info('Evaluation responses:', evaluationResponses);
-
-              const mediationPrompt = multiPerspectiveMediationPrompt(
+        // 2. Synthesize the responses
+        dataStream.writeData({ status: 'Synthesizing the responses...' });
+        const firstPassResponse = await generateText({
+          model: customModel(model.apiIdentifier),
+          messages: [
+            {
+              role: 'system',
+              content: multiPerspectiveSynthesisPrompt(
                 messages[messages.length - 1].content as string,
-                evaluationResponses.map((r) => r.perspective),
-                firstPassResponse.text,
-                evaluationResponses.map((r) => r.text)
-              );
-
-              console.info('Mediation prompt:', mediationPrompt);
-              dataStream.writeData({ status: 'Mediating the responses...' });
-
-              generateText({
-                model: customModel(model.apiIdentifier),
-                messages: [{ role: 'system', content: mediationPrompt }, ...messages],
-                temperature: 0.2,
-              }).then((result) => {
-                console.info('Mediation result:', result.text);
-                dataStream.writeData({ status: 'Synthesizing final response...' });
-                const prompt = finalSynthesisPrompt(
-                  messages[messages.length - 1].content as string,
-                  WORLDVIEWS,
-                  firstPassResponse.text,
-                  result.text
-                );
-                console.info('Final synthesis prompt:', prompt);
-                          // 5. Synthesize the responses
-                const finalResult = streamText({
-                  model: customModel(model.apiIdentifier),
-                  messages: [{ role: 'system', content: prompt }, ...messages],
-                  temperature: 0.2,
-                  experimental_telemetry: {
-                    isEnabled: true,
-                    functionId: 'stream-text',
-                  },
-                });
-
-                finalResult.mergeIntoDataStream(dataStream);
-              });
-            });
-          });
+                perspectiveResponses
+              )
+            },
+            ...messages
+          ],
+          temperature: 0.2,
         });
+
+        console.info('Synthesized text:', firstPassResponse.text);
+        dataStream.writeData({ status: 'Evaluating the first pass response...' });
+
+        // 3. Evaluate first pass response
+        const evaluationResponses = await Promise.all(conflictPromptMaps.map(async (promptMap) => {
+          console.info('Generating text for evaluation pass...');
+          const { text } = await generateText({
+            model: customModel(model.apiIdentifier),
+            messages: [{ role: 'system', content: promptMap.prompt }, ...messages],
+            temperature: 0.2,
+          });
+          console.info('Generated text for evaluation:', text);
+          return { text, perspective: promptMap.perspective };
+        }));
+
+        console.info('Evaluation responses:', evaluationResponses);
+        dataStream.writeData({ status: 'Mediating the responses...' });
+
+        const mediationPrompt = multiPerspectiveMediationPrompt(
+          messages[messages.length - 1].content as string,
+          evaluationResponses.map((r) => r.perspective),
+          firstPassResponse.text,
+          evaluationResponses.map((r) => r.text)
+        );
+
+        console.info('Mediation prompt:', mediationPrompt);
+        const mediationResult = await generateText({
+          model: customModel(model.apiIdentifier),
+          messages: [{ role: 'system', content: mediationPrompt }, ...messages],
+          temperature: 0.2,
+        });
+
+        console.info('Mediation result:', mediationResult.text);
+        dataStream.writeData({ status: 'Synthesizing final response...' });
+
+        const finalPrompt = finalSynthesisPrompt(
+          messages[messages.length - 1].content as string,
+          WORLDVIEWS,
+          firstPassResponse.text,
+          mediationResult.text
+        );
+        console.info('Final synthesis prompt:', finalPrompt);
+
+        const finalResult = streamText({
+          model: customModel(model.apiIdentifier),
+          messages: [{ role: 'system', content: finalPrompt }, ...messages],
+          temperature: 0.2,
+          experimental_telemetry: {
+            isEnabled: true,
+            functionId: 'stream-text',
+          },
+        });
+
+        finalResult.mergeIntoDataStream(dataStream);
       },
     });
   } else {
