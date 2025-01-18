@@ -22,6 +22,7 @@ export default async function Page() {
         id={id}
         initialMessages={[]}
         selectedModelId={selectedModelId}
+        selectedMode="prism"
         selectedVisibilityType="private"
         isReadonly={false}
       />

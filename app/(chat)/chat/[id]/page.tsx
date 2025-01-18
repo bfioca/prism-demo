@@ -45,6 +45,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
         id={chat.id}
         initialMessages={convertToUIMessages(messagesFromDb)}
         selectedModelId={selectedModelId}
+        selectedMode="prism"
         selectedVisibilityType={chat.visibility}
         isReadonly={session?.user?.id !== chat.userId}
       />

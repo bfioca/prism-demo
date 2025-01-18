@@ -19,16 +19,19 @@ export function Chat({
   id,
   initialMessages,
   selectedModelId,
+  selectedMode: initialMode,
   selectedVisibilityType,
   isReadonly,
 }: {
   id: string;
   initialMessages: Array<Message>;
   selectedModelId: string;
+  selectedMode: 'prism' | 'chat';
   selectedVisibilityType: VisibilityType;
   isReadonly: boolean;
 }) {
   const { mutate } = useSWRConfig();
+  const [mode, setMode] = useState<'prism' | 'chat'>(initialMode);
 
   const {
     messages,
@@ -42,7 +45,7 @@ export function Chat({
     reload,
   } = useChat({
     id,
-    body: { id, modelId: selectedModelId },
+    body: { id, modelId: selectedModelId, mode: mode },
     initialMessages,
     experimental_throttle: 100,
     onFinish: () => {
@@ -64,6 +67,8 @@ export function Chat({
         <ChatHeader
           chatId={id}
           selectedModelId={selectedModelId}
+          selectedMode={mode}
+          onModeChange={setMode}
           selectedVisibilityType={selectedVisibilityType}
           isReadonly={isReadonly}
         />
