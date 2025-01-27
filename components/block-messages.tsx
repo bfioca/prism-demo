@@ -41,7 +41,7 @@ function PureBlockMessages({
   const [messagesContainerRef, messagesEndRef] =
     useScrollToBottom<HTMLDivElement>();
 
-  const [thinkingMessage, setThinkingMessage] = useState<string>('Thinking...');
+  const [thinkingMessage, setThinkingMessage] = useState<string>('');
   const lastProcessedIndex = useRef(-1);
 
   useEffect(() => {
@@ -51,11 +51,13 @@ function PureBlockMessages({
     lastProcessedIndex.current = dataStream.length - 1;
 
     (newDeltas as DataStreamDelta[]).forEach((delta: DataStreamDelta) => {
-      if (delta.type === 'thinking') {
+      if (delta.type === 'thinking' && isLoading) {
         setThinkingMessage(delta.content);
+      } else {
+        setThinkingMessage('');
       }
     });
-  }, [dataStream]);
+  }, [dataStream, isLoading]);
 
   return (
     <div
@@ -79,7 +81,7 @@ function PureBlockMessages({
         />
       ))}
 
-      {isLoading && blockStatus === 'streaming' && (
+      {isLoading && blockStatus === 'streaming' && thinkingMessage && thinkingMessage.length > 0 && (
         <ThinkingMessage message={thinkingMessage} />
       )}
 

@@ -194,6 +194,27 @@ export async function POST(request: Request) {
           },
           onChunk: (chunk) => {
             dataStream.writeData({ type: 'thinking', content: '' });
+          },
+          onFinish: async (response) => {
+            if (session.user?.id) {
+              try {
+                const messageId = generateUUID();
+                await saveMessages({
+                  messages: [{
+                    id: messageId,
+                    chatId: id,
+                    role: 'assistant',
+                    content: response.text,
+                    createdAt: new Date(),
+                  }],
+                });
+                dataStream.writeMessageAnnotation({
+                  messageIdFromServer: messageId,
+                });
+              } catch (error) {
+                console.error('Failed to save chat');
+              }
+            }
           }
         });
 

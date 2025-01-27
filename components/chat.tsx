@@ -15,6 +15,10 @@ import { Messages } from './messages';
 import { VisibilityType } from './visibility-selector';
 import { useBlockSelector } from '@/hooks/use-block';
 
+interface ExtendedMessage extends Message {
+  keyAssumptions?: string;
+}
+
 export function Chat({
   id,
   initialMessages,
@@ -32,10 +36,11 @@ export function Chat({
 }) {
   const { mutate } = useSWRConfig();
   const [mode, setMode] = useState<'prism' | 'chat'>(initialMode);
+  const [keyAssumptions, setKeyAssumptions] = useState<string[]>([]);
 
   const {
-    messages,
-    setMessages,
+    messages: rawMessages,
+    setMessages: setRawMessages,
     handleSubmit,
     input,
     setInput,
@@ -52,6 +57,30 @@ export function Chat({
     onFinish: () => {
       mutate('/api/history');
     },
+  });
+
+  // Process messages to extract key assumptions
+  const messages = rawMessages.map((message, index) => {
+    if (message.role === 'assistant' && message.content) {
+      const content = message.content as string;
+      const keyAssumptionsMatch = content.match(/\*\*Key Assumptions\*\*:\s*([\s\S]*?)\s*\*\*Response\*\*:/);
+      const responseMatch = content.match(/\*\*Response\*\*:\s*([\s\S]*)/);
+
+      if (keyAssumptionsMatch && responseMatch) {
+        const newKeyAssumptions = keyAssumptionsMatch[1].trim();
+        if (keyAssumptions[index] !== newKeyAssumptions) {
+          const newKeyAssumptionsArray = [...keyAssumptions];
+          newKeyAssumptionsArray[index] = newKeyAssumptions;
+          setKeyAssumptions(newKeyAssumptionsArray);
+        }
+        return {
+          ...message,
+          keyAssumptions: newKeyAssumptions,
+          content: responseMatch[1].trim()
+        };
+      }
+    }
+    return message;
   });
 
   const { data: votes } = useSWR<Array<Vote>>(
@@ -79,7 +108,7 @@ export function Chat({
           isLoading={isLoading}
           votes={votes}
           messages={messages}
-          setMessages={setMessages}
+          setMessages={setRawMessages}
           reload={reload}
           isReadonly={isReadonly}
           isBlockVisible={isBlockVisible}
@@ -98,7 +127,7 @@ export function Chat({
               attachments={attachments}
               setAttachments={setAttachments}
               messages={messages}
-              setMessages={setMessages}
+              setMessages={setRawMessages}
               append={append}
             />
           )}
@@ -117,7 +146,7 @@ export function Chat({
         dataStream={dataStream}
         append={append}
         messages={messages}
-        setMessages={setMessages}
+        setMessages={setRawMessages}
         reload={reload}
         votes={votes}
         isReadonly={isReadonly}

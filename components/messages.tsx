@@ -29,7 +29,7 @@ export function Messages({
   isBlockVisible: boolean;
   dataStream?: any[];
 }) {
-  const [thinkingMessage, setThinkingMessage] = useState<string>('Thinking...');
+  const [thinkingMessage, setThinkingMessage] = useState<string>('');
   const lastProcessedIndex = useRef(-1);
 
   useEffect(() => {

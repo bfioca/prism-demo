@@ -20,6 +20,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { MessageEditor } from './message-editor';
 import { DocumentPreview } from './document-preview';
 
+interface ExtendedMessage extends Message {
+  keyAssumptions?: string;
+}
+
 const PurePreviewMessage = ({
   chatId,
   message,
@@ -30,7 +34,7 @@ const PurePreviewMessage = ({
   isReadonly,
 }: {
   chatId: string;
-  message: Message;
+  message: ExtendedMessage;
   vote: Vote | undefined;
   isLoading: boolean;
   setMessages: (
@@ -42,6 +46,72 @@ const PurePreviewMessage = ({
   isReadonly: boolean;
 }) => {
   const [mode, setMode] = useState<'view' | 'edit'>('view');
+
+  const { displayContent, keyAssumptions, isComplete } = useMemo(() => {
+    if (!message.content) {
+      return { displayContent: '', keyAssumptions: undefined, isComplete: true };
+    }
+
+    if (message.role === 'assistant') {
+      const content = message.content as string;
+
+      // First try to parse with the expected format
+      const keyAssumptionsPattern = /\*\*Key Assumptions\*\*:?([\s\S]*?)(?=\*\*Response\*\*|$)/i;
+      const responsePattern = /\*\*Response\*\*:?([\s\S]*?)$/i;
+
+      const keyAssumptionsMatch = content.match(keyAssumptionsPattern);
+      const responseMatch = content.match(responsePattern);
+
+      // Check if we have a complete response (has both sections or neither)
+      const hasKeyAssumptions = keyAssumptionsMatch !== null;
+      const hasResponse = responseMatch !== null;
+      const isStreamingPrismResponse = content.includes('**Key Assumptions**') && !hasResponse;
+
+      // If we're still streaming a PRISM response, mark as incomplete
+      if (isStreamingPrismResponse) {
+        return {
+          displayContent: '',
+          keyAssumptions: undefined,
+          isComplete: false
+        };
+      }
+
+      // If we have a complete response with both sections
+      if (hasKeyAssumptions && hasResponse) {
+        return {
+          displayContent: responseMatch[1].trim(),
+          keyAssumptions: keyAssumptionsMatch[1].trim(),
+          isComplete: true
+        };
+      }
+
+      // If no clear sections found, just return the whole content
+      return {
+        displayContent: content,
+        keyAssumptions: undefined,
+        isComplete: true
+      };
+    }
+
+    // For user messages, just show the content as is
+    return {
+      displayContent: message.content,
+      keyAssumptions: undefined,
+      isComplete: true
+    };
+  }, [message]);
+
+  // Debug logs for component state
+  console.log('Component state:', {
+    id: message.id,
+    role: message.role,
+    content: message.content?.substring(0, 100) + '...',
+    isLoading,
+    mode,
+    displayContent: displayContent?.substring(0, 100) + '...',
+    keyAssumptions: keyAssumptions?.substring(0, 100),
+    isComplete
+  });
 
   return (
     <AnimatePresence>
@@ -80,7 +150,28 @@ const PurePreviewMessage = ({
               </div>
             )}
 
-            {message.content && mode === 'view' && (
+            {message.role === 'assistant' && !isComplete ? (
+              <div className="flex flex-row gap-2 items-start">
+                <div className={cn('flex flex-col gap-4')}>
+                  <div className="text-muted-foreground">
+                    <motion.span
+                      animate={{
+                        opacity: [0.5, 1, 0.5],
+                      }}
+                      transition={{
+                        duration: 1.5,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                    >
+                      Thinking...
+                    </motion.span>
+                  </div>
+                  {/* Hidden div to store streaming content */}
+                  <div className="hidden">{message.content}</div>
+                </div>
+              </div>
+            ) : message.content && mode === 'view' && (
               <div className="flex flex-row gap-2 items-start">
                 {message.role === 'user' && !isReadonly && (
                   <Tooltip>
@@ -105,7 +196,13 @@ const PurePreviewMessage = ({
                       message.role === 'user',
                   })}
                 >
-                  <Markdown>{message.content as string}</Markdown>
+                  {keyAssumptions && (
+                    <div className="border-l-4 border-primary pl-4 mb-4">
+                      <h4 className="font-semibold mb-2">Key Assumptions:</h4>
+                      <Markdown>{keyAssumptions}</Markdown>
+                    </div>
+                  )}
+                  {displayContent && <Markdown>{displayContent}</Markdown>}
                 </div>
               </div>
             )}
@@ -159,6 +256,7 @@ const PurePreviewMessage = ({
                       </div>
                     );
                   }
+
                   return (
                     <div
                       key={toolCallId}
@@ -203,7 +301,7 @@ const PurePreviewMessage = ({
       </motion.div>
     </AnimatePresence>
   );
-};
+}
 
 export const PreviewMessage = memo(
   PurePreviewMessage,
@@ -223,7 +321,7 @@ export const PreviewMessage = memo(
   },
 );
 
-export const ThinkingMessage = ({ message = 'Thinking...' }: { message?: string }) => {
+export const ThinkingMessage = ({ message = '' }: { message?: string }) => {
   const role = 'assistant';
 
   if (!message.trim()) return null;
