@@ -1,6 +1,7 @@
 'use client';
 
-import { ChatRequestOptions, Message } from 'ai';
+import type { ChatRequestOptions } from 'ai';
+import type { Message } from '@/lib/types';
 import { Button } from './ui/button';
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from 'react';
 import { Textarea } from './ui/textarea';

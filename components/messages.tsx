@@ -1,5 +1,5 @@
-import { Message } from 'ai';
-import { Vote } from '@/lib/db/schema';
+import type { Message } from '@/lib/types';
+import type { Vote } from '@/lib/db/schema';
 import { PreviewMessage, ThinkingMessage } from './message';
 import { useEffect, useRef, useState } from 'react';
 

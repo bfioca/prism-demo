@@ -41,9 +41,12 @@ export const message = pgTable('Message', {
   role: varchar('role').notNull(),
   content: json('content').notNull(),
   createdAt: timestamp('createdAt').notNull(),
+  prism_data: json('prism_data'),
 });
 
-export type Message = InferSelectModel<typeof message>;
+export type Message = Omit<InferSelectModel<typeof message>, 'prism_data'> & {
+  prism_data?: unknown;
+};
 
 export const vote = pgTable(
   'Vote',

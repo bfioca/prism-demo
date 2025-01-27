@@ -1,11 +1,12 @@
 'use client';
 
-import type { ChatRequestOptions, Message } from 'ai';
+import type { ChatRequestOptions } from 'ai';
 import cx from 'classnames';
 import { AnimatePresence, motion } from 'framer-motion';
 import { memo, useMemo, useState } from 'react';
 
 import type { Vote } from '@/lib/db/schema';
+import type { Message } from '@/lib/types';
 
 import { DocumentToolCall, DocumentToolResult } from './document';
 import { PencilEditIcon, SparklesIcon } from './icons';

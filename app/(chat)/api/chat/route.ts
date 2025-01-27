@@ -1,5 +1,4 @@
 import {
-  type Message,
   convertToCoreMessages,
   createDataStreamResponse,
   generateText,
@@ -26,6 +25,7 @@ import {
   saveSuggestions,
 } from '@/lib/db/queries';
 import type { Suggestion } from '@/lib/db/schema';
+import type { Message } from '@/lib/types';
 import {
   generateUUID,
   getMostRecentUserMessage,
@@ -103,6 +103,14 @@ export async function POST(request: Request) {
   if (mode === 'prism') {
     return createDataStreamResponse({
       execute: async (dataStream) => {
+        // Create a structure to hold all intermediary responses
+        const intermediaryData = {
+          perspectives: [] as { perspective: string; response: string }[],
+          firstPassSynthesis: '',
+          evaluations: [] as { perspective: string; response: string }[],
+          mediation: '',
+        };
+
         dataStream.writeData({
           type: 'user-message-id',
           content: userMessageId,
@@ -111,7 +119,7 @@ export async function POST(request: Request) {
         dataStream.writeData({ type: 'thinking', content: '(1/5) Getting responses from each perspective...' });
 
         // 1. Get responses from each perspective
-        const perspectiveResponses = await Promise.all(perspectivePrompts.map(async (prompt) => {
+        const perspectiveResponses = await Promise.all(perspectivePrompts.map(async (prompt, index) => {
           console.info('Generating text for perspective...');
           const { text } = await generateText({
             model: customModel(model.apiIdentifier),
@@ -119,6 +127,11 @@ export async function POST(request: Request) {
             temperature: 0.2,
           });
           console.info('Generated text for perspective:', text);
+          // Store in intermediary data
+          intermediaryData.perspectives.push({
+            perspective: WORLDVIEWS[index],
+            response: text
+          });
           return text;
         }));
 
@@ -141,6 +154,9 @@ export async function POST(request: Request) {
           temperature: 0.2,
         });
 
+        // Store first pass synthesis
+        intermediaryData.firstPassSynthesis = firstPassResponse.text;
+
         console.info('Synthesized text:', firstPassResponse.text);
         dataStream.writeData({ type: 'thinking', content:  '(3/5) Evaluating the first pass response...' });
 
@@ -153,9 +169,15 @@ export async function POST(request: Request) {
             temperature: 0.2,
           });
           console.info('Generated text for evaluation:', text);
+          // Store in intermediary data
+          intermediaryData.evaluations.push({
+            perspective: promptMap.perspective,
+            response: text
+          });
           return { text, perspective: promptMap.perspective };
         }));
 
+        // 4. Mediate the responses
         console.info('Evaluation responses:', evaluationResponses);
         dataStream.writeData({ type: 'thinking', content:  '(4/5) Mediating the responses...' });
 
@@ -173,7 +195,13 @@ export async function POST(request: Request) {
           temperature: 0.2,
         });
 
+        // Store mediation result
+        intermediaryData.mediation = mediationResult.text;
+
         console.info('Mediation result:', mediationResult.text);
+        console.info('Complete intermediary data:', intermediaryData);
+
+        // 5. Synthesize final response
         dataStream.writeData({ type: 'thinking', content:  '(5/5) Synthesizing final response...' });
 
         const finalPrompt = finalSynthesisPrompt(
@@ -206,6 +234,7 @@ export async function POST(request: Request) {
                     role: 'assistant',
                     content: response.text,
                     createdAt: new Date(),
+                    prism_data: intermediaryData
                   }],
                 });
                 dataStream.writeMessageAnnotation({

@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { AppSidebar } from '@/components/app-sidebar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { AssumptionsPanel } from '@/components/assumptions-panel';
+import { DetailsPanel } from '@/components/details-panel';
 
 import { auth } from '../(auth)/auth';
 import Script from 'next/script';
@@ -29,6 +30,7 @@ export default async function Layout({
           <div className="relative h-full">
             {children}
             <AssumptionsPanel />
+            <DetailsPanel />
           </div>
         </SidebarInset>
       </SidebarProvider>

@@ -1,9 +1,12 @@
 'use client';
 
-import type { Attachment, Message } from 'ai';
+import type { Attachment } from 'ai';
 import { useChat } from 'ai/react';
-import { useState } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
+import { useState } from 'react';
+
+import type { Message } from '@/lib/types';
+import type { VisibilityType } from '@/components/visibility-selector';
 
 import { ChatHeader } from '@/components/chat-header';
 import type { Vote } from '@/lib/db/schema';
@@ -12,11 +15,12 @@ import { fetcher } from '@/lib/utils';
 import { Block } from './block';
 import { MultimodalInput } from './multimodal-input';
 import { Messages } from './messages';
-import { VisibilityType } from './visibility-selector';
 import { useBlockSelector } from '@/hooks/use-block';
+import { DetailsPanel } from './details-panel';
 
-interface ExtendedMessage extends Message {
+export interface ExtendedMessage extends Message {
   keyAssumptions?: string;
+  prism_data?: any;
 }
 
 export function Chat({
@@ -37,6 +41,7 @@ export function Chat({
   const { mutate } = useSWRConfig();
   const [mode, setMode] = useState<'prism' | 'chat'>(initialMode);
   const [keyAssumptions, setKeyAssumptions] = useState<string[]>([]);
+  const [attachments, setAttachments] = useState<Array<Attachment>>([]);
 
   const {
     messages: rawMessages,
@@ -84,7 +89,6 @@ export function Chat({
     fetcher,
   );
 
-  const [attachments, setAttachments] = useState<Array<Attachment>>([]);
   const isBlockVisible = useBlockSelector((state) => state.isVisible);
 
   return (
@@ -147,6 +151,7 @@ export function Chat({
         votes={votes}
         isReadonly={isReadonly}
       />
+      <DetailsPanel />
     </>
   );
 }

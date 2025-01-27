@@ -1,7 +1,8 @@
 import { PreviewMessage, ThinkingMessage } from './message';
 import { useScrollToBottom } from './use-scroll-to-bottom';
-import { Vote } from '@/lib/db/schema';
-import { ChatRequestOptions, Message } from 'ai';
+import type { Vote } from '@/lib/db/schema';
+import type { ChatRequestOptions } from 'ai';
+import type { Message } from '@/lib/types';
 import { memo, useEffect, useRef, useState } from 'react';
 import equal from 'fast-deep-equal';
 import { UIBlock } from './block';
