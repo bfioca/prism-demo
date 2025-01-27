@@ -60,23 +60,19 @@ export function Chat({
   });
 
   // Process messages to extract key assumptions
-  const messages = rawMessages.map((message, index) => {
+  const messages = rawMessages.map((message) => {
     if (message.role === 'assistant' && message.content) {
       const content = message.content as string;
-      const keyAssumptionsMatch = content.match(/\*\*Key Assumptions\*\*:\s*([\s\S]*?)\s*\*\*Response\*\*:/);
-      const responseMatch = content.match(/\*\*Response\*\*:\s*([\s\S]*)/);
+      const keyAssumptionsMatch = content.match(/Key Assumptions:\s*([\s\S]*?)\s*Response:/);
+      const responseMatch = content.match(/Response:\s*([\s\S]*)/);
 
       if (keyAssumptionsMatch && responseMatch) {
-        const newKeyAssumptions = keyAssumptionsMatch[1].trim();
-        if (keyAssumptions[index] !== newKeyAssumptions) {
-          const newKeyAssumptionsArray = [...keyAssumptions];
-          newKeyAssumptionsArray[index] = newKeyAssumptions;
-          setKeyAssumptions(newKeyAssumptionsArray);
-        }
+        const keyAssumptions = keyAssumptionsMatch[1].trim();
+        // Keep the original content but add the processed parts as properties
         return {
           ...message,
-          keyAssumptions: newKeyAssumptions,
-          content: responseMatch[1].trim()
+          keyAssumptions,
+          content: content // Keep the original content
         };
       }
     }

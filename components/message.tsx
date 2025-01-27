@@ -24,6 +24,16 @@ interface ExtendedMessage extends Message {
   keyAssumptions?: string;
 }
 
+function extractPrismSections(content: string) {
+  const keyAssumptionsMatch = content.match(/\*\*Key Assumptions\*\*:?([\s\S]*?)(?=\*\*Response\*\*|$)/i);
+  const responseMatch = content.match(/\*\*Response\*\*:?([\s\S]*?)$/i);
+
+  return {
+    keyAssumptions: keyAssumptionsMatch ? keyAssumptionsMatch[1].trim() : undefined,
+    response: responseMatch ? responseMatch[1].trim() : undefined,
+  };
+}
+
 const PurePreviewMessage = ({
   chatId,
   message,
@@ -47,55 +57,44 @@ const PurePreviewMessage = ({
 }) => {
   const [mode, setMode] = useState<'view' | 'edit'>('view');
 
-  const { displayContent, keyAssumptions, isComplete } = useMemo(() => {
+  const { content: displayContent, isComplete } = useMemo(() => {
     if (!message.content) {
-      return { displayContent: '', keyAssumptions: undefined, isComplete: true };
+      return { content: '', isComplete: true };
     }
 
     if (message.role === 'assistant') {
       const content = message.content as string;
 
-      // First try to parse with the expected format
-      const keyAssumptionsPattern = /\*\*Key Assumptions\*\*:?([\s\S]*?)(?=\*\*Response\*\*|$)/i;
-      const responsePattern = /\*\*Response\*\*:?([\s\S]*?)$/i;
-
       // Check if this is a PRISM response (has or will have Key Assumptions and Response sections)
       const isPrismResponse = content.includes('**Key Assumptions**') || content.includes('**Response**');
 
       if (isPrismResponse) {
-        const keyAssumptionsMatch = content.match(keyAssumptionsPattern);
-        const responseMatch = content.match(responsePattern);
-        const hasResponse = responseMatch !== null;
+        const { keyAssumptions, response } = extractPrismSections(content);
+        const isComplete = keyAssumptions && response;
 
-        // If we're in PRISM mode and don't have a complete response yet, show nothing
-        if (!hasResponse) {
+        if (!isComplete) {
           return {
-            displayContent: '',
-            keyAssumptions: undefined,
-            isComplete: false
+            isComplete: false,
+            content: '',
           };
         }
 
-        // Only show content when we have a complete response
         return {
-          displayContent: responseMatch[1].trim(),
-          keyAssumptions: keyAssumptionsMatch ? keyAssumptionsMatch[1].trim() : undefined,
-          isComplete: true
+          isComplete: true,
+          content: <Markdown>{response}</Markdown>,
         };
       }
 
       // For non-PRISM responses, show the full content
       return {
-        displayContent: content,
-        keyAssumptions: undefined,
+        content: <Markdown>{content}</Markdown>,
         isComplete: true
       };
     }
 
     // For user messages, just show the content as is
     return {
-      displayContent: message.content,
-      keyAssumptions: undefined,
+      content: <Markdown>{message.content}</Markdown>,
       isComplete: true
     };
   }, [message]);
@@ -107,8 +106,6 @@ const PurePreviewMessage = ({
     content: message.content?.substring(0, 100) + '...',
     isLoading,
     mode,
-    displayContent: displayContent?.substring(0, 100) + '...',
-    keyAssumptions: keyAssumptions?.substring(0, 100),
     isComplete
   });
 
@@ -195,29 +192,18 @@ const PurePreviewMessage = ({
                       message.role === 'user',
                   })}
                 >
-                  {keyAssumptions && (
-                    <div className="border-l-4 border-primary pl-4 mb-4">
-                      <h4 className="font-semibold mb-2">Key Assumptions:</h4>
-                      <Markdown>{keyAssumptions}</Markdown>
-                    </div>
-                  )}
-                  {displayContent && <Markdown>{displayContent}</Markdown>}
+                  {displayContent}
                 </div>
               </div>
             )}
 
             {message.content && mode === 'edit' && (
-              <div className="flex flex-row gap-2 items-start">
-                <div className="size-8" />
-
-                <MessageEditor
-                  key={message.id}
-                  message={message}
-                  setMode={setMode}
-                  setMessages={setMessages}
-                  reload={reload}
-                />
-              </div>
+              <MessageEditor
+                message={message}
+                setMessages={setMessages}
+                setMode={setMode}
+                reload={reload}
+              />
             )}
 
             {message.toolInvocations && message.toolInvocations.length > 0 && (
@@ -302,23 +288,10 @@ const PurePreviewMessage = ({
   );
 }
 
-export const PreviewMessage = memo(
-  PurePreviewMessage,
-  (prevProps, nextProps) => {
-    if (prevProps.isLoading !== nextProps.isLoading) return false;
-    if (prevProps.message.content !== nextProps.message.content) return false;
-    if (
-      !equal(
-        prevProps.message.toolInvocations,
-        nextProps.message.toolInvocations,
-      )
-    )
-      return false;
-    if (!equal(prevProps.vote, nextProps.vote)) return false;
-
-    return true;
-  },
-);
+export const PreviewMessage = memo(PurePreviewMessage, (prev, next) => {
+  const isEqual = equal(prev, next);
+  return isEqual;
+});
 
 export const ThinkingMessage = ({ message = '' }: { message?: string }) => {
   const role = 'assistant';
@@ -372,3 +345,30 @@ export const ThinkingMessage = ({ message = '' }: { message?: string }) => {
     </motion.div>
   );
 };
+
+export function MessageContent({ message, isComplete }: { message: Message; isComplete?: boolean }) {
+  const content = message.content;
+  const isPrismResponse = content.includes('Key Assumptions:') || content.includes('Response:');
+
+  if (isPrismResponse) {
+    const { keyAssumptions, response } = extractPrismSections(content);
+    const isComplete = keyAssumptions && response;
+
+    if (!isComplete) {
+      return {
+        isComplete: false,
+        content: '',
+      };
+    }
+
+    return {
+      isComplete: true,
+      content: <Markdown>{response}</Markdown>,
+    };
+  }
+
+  return {
+    isComplete: true,
+    content: <Markdown>{content}</Markdown>,
+  };
+}
