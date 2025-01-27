@@ -59,33 +59,32 @@ const PurePreviewMessage = ({
       const keyAssumptionsPattern = /\*\*Key Assumptions\*\*:?([\s\S]*?)(?=\*\*Response\*\*|$)/i;
       const responsePattern = /\*\*Response\*\*:?([\s\S]*?)$/i;
 
-      const keyAssumptionsMatch = content.match(keyAssumptionsPattern);
-      const responseMatch = content.match(responsePattern);
+      // Check if this is a PRISM response (has or will have Key Assumptions and Response sections)
+      const isPrismResponse = content.includes('**Key Assumptions**') || content.includes('**Response**');
 
-      // Check if we have a complete response (has both sections or neither)
-      const hasKeyAssumptions = keyAssumptionsMatch !== null;
-      const hasResponse = responseMatch !== null;
-      const isStreamingPrismResponse = content.includes('**Key Assumptions**') && !hasResponse;
+      if (isPrismResponse) {
+        const keyAssumptionsMatch = content.match(keyAssumptionsPattern);
+        const responseMatch = content.match(responsePattern);
+        const hasResponse = responseMatch !== null;
 
-      // If we're still streaming a PRISM response, mark as incomplete
-      if (isStreamingPrismResponse) {
-        return {
-          displayContent: '',
-          keyAssumptions: undefined,
-          isComplete: false
-        };
-      }
+        // If we're in PRISM mode and don't have a complete response yet, show nothing
+        if (!hasResponse) {
+          return {
+            displayContent: '',
+            keyAssumptions: undefined,
+            isComplete: false
+          };
+        }
 
-      // If we have a complete response with both sections
-      if (hasKeyAssumptions && hasResponse) {
+        // Only show content when we have a complete response
         return {
           displayContent: responseMatch[1].trim(),
-          keyAssumptions: keyAssumptionsMatch[1].trim(),
+          keyAssumptions: keyAssumptionsMatch ? keyAssumptionsMatch[1].trim() : undefined,
           isComplete: true
         };
       }
 
-      // If no clear sections found, just return the whole content
+      // For non-PRISM responses, show the full content
       return {
         displayContent: content,
         keyAssumptions: undefined,
