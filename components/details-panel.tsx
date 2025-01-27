@@ -71,7 +71,7 @@ export function DetailsPanel() {
                               Worldview {i + 1}
                             </div>
                           </div>
-                          <div className="text-sm text-muted-foreground/80 italic leading-relaxed">{p.perspective.split('\n')[0]}</div>
+                          <div className="text-sm text-muted-foreground/80 italic leading-relaxed prose prose-sm max-w-none">{p.perspective}</div>
                           <div className={cn(
                             "text-sm pl-4 border-l-2 border-primary/20",
                             "prose prose-sm max-w-none",
@@ -115,7 +115,7 @@ export function DetailsPanel() {
                               Worldview {i + 1}
                             </div>
                           </div>
-                          <div className="text-sm text-muted-foreground/80 italic leading-relaxed">{e.perspective.split('\n')[0]}</div>
+                          <div className="text-sm text-muted-foreground/80 italic leading-relaxed prose prose-sm max-w-none">{e.perspective}</div>
                           <div className={cn(
                             "text-sm pl-4 border-l-2 border-primary/20",
                             "prose prose-sm max-w-none",
