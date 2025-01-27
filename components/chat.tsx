@@ -16,7 +16,6 @@ import { Block } from './block';
 import { MultimodalInput } from './multimodal-input';
 import { Messages } from './messages';
 import { useBlockSelector } from '@/hooks/use-block';
-import { DetailsPanel } from './details-panel';
 
 export interface ExtendedMessage extends Message {
   keyAssumptions?: string;
@@ -151,7 +150,6 @@ export function Chat({
         votes={votes}
         isReadonly={isReadonly}
       />
-      <DetailsPanel />
     </>
   );
 }
