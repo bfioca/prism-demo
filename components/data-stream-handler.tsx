@@ -131,7 +131,7 @@ export function ChatStreamHandler({
   dataStream: any[] | undefined
 }) {
   const lastProcessedIndex = useRef(-1);
-  const [thinkingMessage, setThinkingMessage] = useState<string>('Thinking...');
+  const [thinkingMessage, setThinkingMessage] = useState<string>('');
 
   useEffect(() => {
     if (!dataStream?.length) return;

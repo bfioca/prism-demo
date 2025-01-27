@@ -1,11 +1,12 @@
 'use client';
 
-import type { ChatRequestOptions, Message } from 'ai';
+import type { ChatRequestOptions } from 'ai';
 import cx from 'classnames';
 import { AnimatePresence, motion } from 'framer-motion';
 import { memo, useMemo, useState } from 'react';
 
 import type { Vote } from '@/lib/db/schema';
+import type { Message } from '@/lib/types';
 
 import { DocumentToolCall, DocumentToolResult } from './document';
 import { PencilEditIcon, SparklesIcon } from './icons';
@@ -20,6 +21,20 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { MessageEditor } from './message-editor';
 import { DocumentPreview } from './document-preview';
 
+interface ExtendedMessage extends Message {
+  keyAssumptions?: string;
+}
+
+function extractPrismSections(content: string) {
+  const keyAssumptionsMatch = content.match(/\*\*Key Assumptions\*\*:?([\s\S]*?)(?=\*\*Response\*\*|$)/i);
+  const responseMatch = content.match(/\*\*Response\*\*:?([\s\S]*?)$/i);
+
+  return {
+    keyAssumptions: keyAssumptionsMatch ? keyAssumptionsMatch[1].trim() : undefined,
+    response: responseMatch ? responseMatch[1].trim() : undefined,
+  };
+}
+
 const PurePreviewMessage = ({
   chatId,
   message,
@@ -30,7 +45,7 @@ const PurePreviewMessage = ({
   isReadonly,
 }: {
   chatId: string;
-  message: Message;
+  message: ExtendedMessage;
   vote: Vote | undefined;
   isLoading: boolean;
   setMessages: (
@@ -42,6 +57,58 @@ const PurePreviewMessage = ({
   isReadonly: boolean;
 }) => {
   const [mode, setMode] = useState<'view' | 'edit'>('view');
+
+  const { content: displayContent, isComplete } = useMemo(() => {
+    if (!message.content) {
+      return { content: '', isComplete: true };
+    }
+
+    if (message.role === 'assistant') {
+      const content = message.content as string;
+
+      // Check if this is a PRISM response (has or will have Key Assumptions and Response sections)
+      const isPrismResponse = content.includes('**Key Assumptions**') || content.includes('**Response**');
+
+      if (isPrismResponse) {
+        const { keyAssumptions, response } = extractPrismSections(content);
+        const isComplete = keyAssumptions && response;
+
+        if (!isComplete) {
+          return {
+            isComplete: false,
+            content: '',
+          };
+        }
+
+        return {
+          isComplete: true,
+          content: <Markdown>{response}</Markdown>,
+        };
+      }
+
+      // For non-PRISM responses, show the full content
+      return {
+        content: <Markdown>{content}</Markdown>,
+        isComplete: true
+      };
+    }
+
+    // For user messages, just show the content as is
+    return {
+      content: <Markdown>{message.content}</Markdown>,
+      isComplete: true
+    };
+  }, [message]);
+
+  // Debug logs for component state
+  console.log('Component state:', {
+    id: message.id,
+    role: message.role,
+    content: message.content?.substring(0, 100) + '...',
+    isLoading,
+    mode,
+    isComplete
+  });
 
   return (
     <AnimatePresence>
@@ -80,7 +147,28 @@ const PurePreviewMessage = ({
               </div>
             )}
 
-            {message.content && mode === 'view' && (
+            {message.role === 'assistant' && !isComplete ? (
+              <div className="flex flex-row gap-2 items-start">
+                <div className={cn('flex flex-col gap-4')}>
+                  <div className="text-muted-foreground">
+                    <motion.span
+                      animate={{
+                        opacity: [0.5, 1, 0.5],
+                      }}
+                      transition={{
+                        duration: 1.5,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                    >
+                      Thinking...
+                    </motion.span>
+                  </div>
+                  {/* Hidden div to store streaming content */}
+                  <div className="hidden">{message.content}</div>
+                </div>
+              </div>
+            ) : message.content && mode === 'view' && (
               <div className="flex flex-row gap-2 items-start">
                 {message.role === 'user' && !isReadonly && (
                   <Tooltip>
@@ -105,23 +193,18 @@ const PurePreviewMessage = ({
                       message.role === 'user',
                   })}
                 >
-                  <Markdown>{message.content as string}</Markdown>
+                  {displayContent}
                 </div>
               </div>
             )}
 
             {message.content && mode === 'edit' && (
-              <div className="flex flex-row gap-2 items-start">
-                <div className="size-8" />
-
-                <MessageEditor
-                  key={message.id}
-                  message={message}
-                  setMode={setMode}
-                  setMessages={setMessages}
-                  reload={reload}
-                />
-              </div>
+              <MessageEditor
+                message={message}
+                setMessages={setMessages}
+                setMode={setMode}
+                reload={reload}
+              />
             )}
 
             {message.toolInvocations && message.toolInvocations.length > 0 && (
@@ -159,6 +242,7 @@ const PurePreviewMessage = ({
                       </div>
                     );
                   }
+
                   return (
                     <div
                       key={toolCallId}
@@ -203,27 +287,14 @@ const PurePreviewMessage = ({
       </motion.div>
     </AnimatePresence>
   );
-};
+}
 
-export const PreviewMessage = memo(
-  PurePreviewMessage,
-  (prevProps, nextProps) => {
-    if (prevProps.isLoading !== nextProps.isLoading) return false;
-    if (prevProps.message.content !== nextProps.message.content) return false;
-    if (
-      !equal(
-        prevProps.message.toolInvocations,
-        nextProps.message.toolInvocations,
-      )
-    )
-      return false;
-    if (!equal(prevProps.vote, nextProps.vote)) return false;
+export const PreviewMessage = memo(PurePreviewMessage, (prev, next) => {
+  const isEqual = equal(prev, next);
+  return isEqual;
+});
 
-    return true;
-  },
-);
-
-export const ThinkingMessage = ({ message = 'Thinking...' }: { message?: string }) => {
+export const ThinkingMessage = ({ message = '' }: { message?: string }) => {
   const role = 'assistant';
 
   if (!message.trim()) return null;
@@ -275,3 +346,30 @@ export const ThinkingMessage = ({ message = 'Thinking...' }: { message?: string 
     </motion.div>
   );
 };
+
+export function MessageContent({ message, isComplete }: { message: Message; isComplete?: boolean }) {
+  const content = message.content;
+  const isPrismResponse = content.includes('Key Assumptions:') || content.includes('Response:');
+
+  if (isPrismResponse) {
+    const { keyAssumptions, response } = extractPrismSections(content);
+    const isComplete = keyAssumptions && response;
+
+    if (!isComplete) {
+      return {
+        isComplete: false,
+        content: '',
+      };
+    }
+
+    return {
+      isComplete: true,
+      content: <Markdown>{response}</Markdown>,
+    };
+  }
+
+  return {
+    isComplete: true,
+    content: <Markdown>{content}</Markdown>,
+  };
+}

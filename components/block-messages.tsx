@@ -1,7 +1,8 @@
 import { PreviewMessage, ThinkingMessage } from './message';
 import { useScrollToBottom } from './use-scroll-to-bottom';
-import { Vote } from '@/lib/db/schema';
-import { ChatRequestOptions, Message } from 'ai';
+import type { Vote } from '@/lib/db/schema';
+import type { ChatRequestOptions } from 'ai';
+import type { Message } from '@/lib/types';
 import { memo, useEffect, useRef, useState } from 'react';
 import equal from 'fast-deep-equal';
 import { UIBlock } from './block';
@@ -41,7 +42,7 @@ function PureBlockMessages({
   const [messagesContainerRef, messagesEndRef] =
     useScrollToBottom<HTMLDivElement>();
 
-  const [thinkingMessage, setThinkingMessage] = useState<string>('Thinking...');
+  const [thinkingMessage, setThinkingMessage] = useState<string>('');
   const lastProcessedIndex = useRef(-1);
 
   useEffect(() => {
@@ -51,11 +52,13 @@ function PureBlockMessages({
     lastProcessedIndex.current = dataStream.length - 1;
 
     (newDeltas as DataStreamDelta[]).forEach((delta: DataStreamDelta) => {
-      if (delta.type === 'thinking') {
+      if (delta.type === 'thinking' && isLoading) {
         setThinkingMessage(delta.content);
+      } else {
+        setThinkingMessage('');
       }
     });
-  }, [dataStream]);
+  }, [dataStream, isLoading]);
 
   return (
     <div
@@ -79,7 +82,7 @@ function PureBlockMessages({
         />
       ))}
 
-      {isLoading && blockStatus === 'streaming' && (
+      {isLoading && blockStatus === 'streaming' && thinkingMessage && thinkingMessage.length > 0 && (
         <ThinkingMessage message={thinkingMessage} />
       )}
 

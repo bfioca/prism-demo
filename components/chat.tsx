@@ -1,9 +1,12 @@
 'use client';
 
-import type { Attachment, Message } from 'ai';
+import type { Attachment } from 'ai';
 import { useChat } from 'ai/react';
-import { useState } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
+import { useState } from 'react';
+
+import type { Message } from '@/lib/types';
+import type { VisibilityType } from '@/components/visibility-selector';
 
 import { ChatHeader } from '@/components/chat-header';
 import type { Vote } from '@/lib/db/schema';
@@ -12,8 +15,12 @@ import { fetcher } from '@/lib/utils';
 import { Block } from './block';
 import { MultimodalInput } from './multimodal-input';
 import { Messages } from './messages';
-import { VisibilityType } from './visibility-selector';
 import { useBlockSelector } from '@/hooks/use-block';
+
+export interface ExtendedMessage extends Message {
+  keyAssumptions?: string;
+  prism_data?: any;
+}
 
 export function Chat({
   id,
@@ -32,10 +39,12 @@ export function Chat({
 }) {
   const { mutate } = useSWRConfig();
   const [mode, setMode] = useState<'prism' | 'chat'>(initialMode);
+  const [keyAssumptions, setKeyAssumptions] = useState<string[]>([]);
+  const [attachments, setAttachments] = useState<Array<Attachment>>([]);
 
   const {
-    messages,
-    setMessages,
+    messages: rawMessages,
+    setMessages: setRawMessages,
     handleSubmit,
     input,
     setInput,
@@ -54,12 +63,31 @@ export function Chat({
     },
   });
 
+  // Process messages to extract key assumptions
+  const messages = rawMessages.map((message) => {
+    if (message.role === 'assistant' && message.content) {
+      const content = message.content as string;
+      const keyAssumptionsMatch = content.match(/Key Assumptions:\s*([\s\S]*?)\s*Response:/);
+      const responseMatch = content.match(/Response:\s*([\s\S]*)/);
+
+      if (keyAssumptionsMatch && responseMatch) {
+        const keyAssumptions = keyAssumptionsMatch[1].trim();
+        // Keep the original content but add the processed parts as properties
+        return {
+          ...message,
+          keyAssumptions,
+          content: content // Keep the original content
+        };
+      }
+    }
+    return message;
+  });
+
   const { data: votes } = useSWR<Array<Vote>>(
     `/api/vote?chatId=${id}`,
     fetcher,
   );
 
-  const [attachments, setAttachments] = useState<Array<Attachment>>([]);
   const isBlockVisible = useBlockSelector((state) => state.isVisible);
 
   return (
@@ -79,7 +107,7 @@ export function Chat({
           isLoading={isLoading}
           votes={votes}
           messages={messages}
-          setMessages={setMessages}
+          setMessages={setRawMessages}
           reload={reload}
           isReadonly={isReadonly}
           isBlockVisible={isBlockVisible}
@@ -98,7 +126,7 @@ export function Chat({
               attachments={attachments}
               setAttachments={setAttachments}
               messages={messages}
-              setMessages={setMessages}
+              setMessages={setRawMessages}
               append={append}
             />
           )}
@@ -117,7 +145,7 @@ export function Chat({
         dataStream={dataStream}
         append={append}
         messages={messages}
-        setMessages={setMessages}
+        setMessages={setRawMessages}
         reload={reload}
         votes={votes}
         isReadonly={isReadonly}

@@ -1,10 +1,10 @@
-import type { Message } from 'ai';
 import { toast } from 'sonner';
 import { useSWRConfig } from 'swr';
 import { useCopyToClipboard } from 'usehooks-ts';
 
 import type { Vote } from '@/lib/db/schema';
 import { getMessageIdFromAnnotations } from '@/lib/utils';
+import type { Message } from '@/lib/types';
 
 import { CopyIcon, ThumbDownIcon, ThumbUpIcon } from './icons';
 import { Button } from './ui/button';
@@ -16,6 +16,27 @@ import {
 } from './ui/tooltip';
 import { memo } from 'react';
 import equal from 'fast-deep-equal';
+
+function extractPrismSections(content: string) {
+  const keyAssumptionsMatch = content.match(/\d+\.\s*\*\*Key Assumptions\*\*:?\s*([\s\S]*?)(?=\s*\d+\.\s*\*\*Response\*\*)/i);
+  const responseMatch = content.match(/\d+\.\s*\*\*Response\*\*:?\s*([\s\S]*?)$/i);
+
+  // Clean up and ensure proper indentation
+  const cleanAssumptions = (text?: string) => {
+    if (!text) return undefined;
+    return text
+      .split('\n')
+      .map(line => line.trim()) // First trim all lines
+      .filter(line => line.length > 0) // Remove empty lines
+      .join('\n')
+      .trim();
+  };
+
+  return {
+    keyAssumptions: cleanAssumptions(keyAssumptionsMatch?.[1]),
+    response: responseMatch ? responseMatch[1].trim() : undefined,
+  };
+}
 
 export function PureMessageActions({
   chatId,
@@ -35,6 +56,21 @@ export function PureMessageActions({
   if (message.role === 'user') return null;
   if (message.toolInvocations && message.toolInvocations.length > 0)
     return null;
+
+  const { keyAssumptions } = extractPrismSections(message.content as string);
+  const isPrismResponse = keyAssumptions !== undefined;
+
+  // Debug logging
+  console.log('MessageActions:', {
+    content: message.content,
+    keyAssumptions,
+    isPrismResponse,
+    prism_data: message.prism_data,
+    contentMatches: {
+      keyAssumptionsMatch: (message.content as string).match(/\d+\.\s*\*\*Key Assumptions\*\*:?\s*([\s\S]*?)(?=\s*\d+\.\s*\*\*Response\*\*)/i),
+      responseMatch: (message.content as string).match(/\d+\.\s*\*\*Response\*\*:?\s*([\s\S]*?)$/i)
+    }
+  });
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -162,6 +198,52 @@ export function PureMessageActions({
           </TooltipTrigger>
           <TooltipContent>Downvote Response</TooltipContent>
         </Tooltip>
+
+        {isPrismResponse && (
+          <>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  className="py-1 px-2 h-fit text-muted-foreground text-sm"
+                  variant="outline"
+                  onClick={() => {
+                    document.dispatchEvent(new CustomEvent('showAssumptions', {
+                      detail: {
+                        assumptions: keyAssumptions,
+                        messageId: message.id
+                      }
+                    }));
+                  }}
+                >
+                  View Assumptions
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>View Key Assumptions</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  className="py-1 px-2 h-fit text-muted-foreground text-sm"
+                  variant="outline"
+                  onClick={() => {
+                    if (message.prism_data) {
+                      document.dispatchEvent(new CustomEvent('showDetails', {
+                        detail: {
+                          details: message.prism_data,
+                          messageId: message.id
+                        }
+                      }));
+                    }
+                  }}
+                >
+                  View Details
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>View Response Details</TooltipContent>
+            </Tooltip>
+          </>
+        )}
       </div>
     </TooltipProvider>
   );

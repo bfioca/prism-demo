@@ -2,12 +2,12 @@ import type {
   CoreAssistantMessage,
   CoreMessage,
   CoreToolMessage,
-  Message,
   ToolInvocation,
 } from 'ai';
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
+import type { Message } from '@/lib/types';
 import type { Message as DBMessage, Document } from '@/lib/db/schema';
 
 export function cn(...inputs: ClassValue[]) {
@@ -120,6 +120,7 @@ export function convertToUIMessages(
       role: message.role as Message['role'],
       content: textContent,
       toolInvocations,
+      prism_data: message.prism_data,
     });
 
     return chatMessages;
