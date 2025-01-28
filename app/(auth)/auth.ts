@@ -69,35 +69,12 @@ export const {
       return true;
     },
     async jwt({ token, user, account, trigger }) {
-      console.debug('jwt callback', {
-        token,
-        user,
-        accountProvider: account?.provider,
-        trigger,
-        tokenKeys: Object.keys(token || {}),
-        userKeys: Object.keys(user || {})
-      });
-
       if (user) {
         token.id = user.id;
       }
       return token;
     },
     async session({ session, token }: { session: ExtendedSession; token: any }) {
-      console.debug('session callback', {
-        session: {
-          ...session,
-          user: session?.user ? {
-            ...session.user,
-            keys: Object.keys(session.user)
-          } : null
-        },
-        token: {
-          ...token,
-          keys: Object.keys(token)
-        }
-      });
-
       if (token) {
         session.user.id = token.id;
       }
