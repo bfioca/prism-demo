@@ -150,12 +150,12 @@ export async function POST(request: Request) {
             if (mode === 'baseline') {
               const { text } = await generateText({
                 model: customModel(model.apiIdentifier),
-                messages: [{ role: 'system', content: systemPrompt }, ...messages],
+                messages: messages,
                 temperature: 0.2,
               });
               return text;
             } else {
-              dataStream.writeData({ type: 'thinking', content: `(2/5) ${mode} the responses...` });
+              dataStream.writeData({ type: 'thinking', content: `(2/5) Synthesizing the responses...` });
               const { text } = await generateText({
                 model: customModel(model.apiIdentifier),
                 messages: [

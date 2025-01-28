@@ -1,6 +1,7 @@
 import { toast } from 'sonner';
 import { useSWRConfig } from 'swr';
 import { useCopyToClipboard } from 'usehooks-ts';
+import { usePanel } from './panel-context';
 
 import type { Vote } from '@/lib/db/schema';
 import { getMessageIdFromAnnotations } from '@/lib/utils';
@@ -52,6 +53,7 @@ export function PureMessageActions({
   isLoading: boolean;
 }) {
   const { mutate } = useSWRConfig();
+  const { setActivePanel } = usePanel();
   const [_, copyToClipboard] = useCopyToClipboard();
 
   if (isLoading) return null;
@@ -246,26 +248,28 @@ export function PureMessageActions({
               <TooltipContent>View Response Details</TooltipContent>
             </Tooltip>
 
-            {message.prism_data?.baselineResponse && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    className="py-1 px-2 h-fit text-muted-foreground text-sm"
-                    variant="outline"
-                    onClick={() => {
-                      document.dispatchEvent(new CustomEvent('showBaseline', {
-                        detail: {
-                          baseline: message.prism_data?.baselineResponse || ''
-                        }
-                      }));
-                    }}
-                  >
-                    View Baseline
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>View Baseline Response</TooltipContent>
-              </Tooltip>
-            )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  className="py-1 px-2 h-fit text-muted-foreground text-sm"
+                  variant="outline"
+                  onClick={() => {
+                    // First set the panel state
+                    setActivePanel('baseline');
+                    // Then update the content
+                    document.dispatchEvent(new CustomEvent('showBaseline', {
+                      detail: {
+                        baseline: message.prism_data?.baselineResponse || '',
+                        messageId: message.id
+                      }
+                    }));
+                  }}
+                >
+                  View Baseline
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>View Baseline Response</TooltipContent>
+            </Tooltip>
           </>
         )}
       </div>
