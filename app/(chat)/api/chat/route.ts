@@ -105,6 +105,7 @@ export async function POST(request: Request) {
       execute: async (dataStream) => {
         // Create a structure to hold all intermediary responses
         const intermediaryData = {
+          baselineResponse: '',
           perspectives: [] as { perspective: string; response: string }[],
           firstPassSynthesis: '',
           evaluations: [] as { perspective: string; response: string }[],
@@ -142,31 +143,49 @@ export async function POST(request: Request) {
 
         console.info('All perspectives responses:', perspectiveResponses);
 
-        // 2. Synthesize the responses
-        dataStream.writeData({ type: 'thinking', content:  '(2/5) Synthesizing the responses...' });
-        const firstPassResponse = await generateText({
-          model: customModel(model.apiIdentifier),
-          messages: [
-            {
-              role: 'system',
-              content: multiPerspectiveSynthesisPrompt(
-                messages[messages.length - 1].content as string,
-                perspectiveResponses
-              )
-            },
-            ...messages
-          ],
-          temperature: 0.2,
-        });
+        // 2. Synthesize the responses and generate a baseline response
+        const parallelModes = ['baseline', 'synthesis'];
+        const [baselineResponse, firstPassResponse] = await Promise.all(
+          parallelModes.map(async (mode) => {
+            if (mode === 'baseline') {
+              const { text } = await generateText({
+                model: customModel(model.apiIdentifier),
+                messages: messages,
+                temperature: 0.2,
+              });
+              return text;
+            } else {
+              dataStream.writeData({ type: 'thinking', content: `(2/5) Synthesizing the responses...` });
+              const { text } = await generateText({
+                model: customModel(model.apiIdentifier),
+                messages: [
+                  {
+                    role: 'system',
+                    content: multiPerspectiveSynthesisPrompt(
+                      messages[messages.length - 1].content as string,
+                      perspectiveResponses
+                    )
+                  },
+                  ...messages
+                ],
+                temperature: 0.2,
+              });
+              return text;
+            }
+          })
+        );
+
+        // store baseline response
+        intermediaryData.baselineResponse = baselineResponse;
 
         // Store first pass synthesis and stream update
-        intermediaryData.firstPassSynthesis = firstPassResponse.text;
+        intermediaryData.firstPassSynthesis = firstPassResponse;
         dataStream.writeData({
           type: 'details',
           content: JSON.stringify(intermediaryData)
         });
 
-        console.info('Synthesized text:', firstPassResponse.text);
+        console.info('Synthesized text:', firstPassResponse);
         dataStream.writeData({ type: 'thinking', content:  '(3/5) Evaluating the first pass response...' });
 
         // 3. Evaluate first pass response
@@ -198,7 +217,7 @@ export async function POST(request: Request) {
         const mediationPrompt = multiPerspectiveMediationPrompt(
           messages[messages.length - 1].content as string,
           evaluationResponses.map((r) => r.perspective),
-          firstPassResponse.text,
+          firstPassResponse,
           evaluationResponses.map((r) => r.text)
         );
 
@@ -225,7 +244,7 @@ export async function POST(request: Request) {
         const finalPrompt = finalSynthesisPrompt(
           messages[messages.length - 1].content as string,
           WORLDVIEWS,
-          firstPassResponse.text,
+          firstPassResponse,
           mediationResult.text
         );
         console.info('Final synthesis prompt:', finalPrompt);

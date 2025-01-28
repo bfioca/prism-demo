@@ -101,14 +101,14 @@ const PurePreviewMessage = ({
   }, [message]);
 
   // Debug logs for component state
-  console.log('Component state:', {
-    id: message.id,
-    role: message.role,
-    content: message.content?.substring(0, 100) + '...',
-    isLoading,
-    mode,
-    isComplete
-  });
+  // console.log('Component state:', {
+  //   id: message.id,
+  //   role: message.role,
+  //   content: message.content?.substring(0, 100) + '...',
+  //   isLoading,
+  //   mode,
+  //   isComplete
+  // });
 
   return (
     <AnimatePresence>
@@ -273,15 +273,14 @@ const PurePreviewMessage = ({
               </div>
             )}
 
-            {!isReadonly && (
-              <MessageActions
-                key={`action-${message.id}`}
-                chatId={chatId}
-                message={message}
-                vote={vote}
-                isLoading={isLoading}
-              />
-            )}
+            <MessageActions
+              key={`action-${message.id}`}
+              chatId={chatId}
+              message={message}
+              vote={vote}
+              isLoading={isLoading}
+              isReadonly={isReadonly}
+            />
           </div>
         </div>
       </motion.div>

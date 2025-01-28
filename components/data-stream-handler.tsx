@@ -144,13 +144,26 @@ export function ChatStreamHandler({
       if (delta.type === 'thinking') {
         setThinkingMessage(delta.content as string);
       } else if (delta.type === 'details') {
-        const event = new CustomEvent('showDetails', {
+        const details = JSON.parse(delta.content as string);
+        // Dispatch details event
+        const detailsEvent = new CustomEvent('showDetails', {
           detail: {
-            details: JSON.parse(delta.content as string),
+            details,
             messageId: 'current'
           }
         });
-        document.dispatchEvent(event);
+        document.dispatchEvent(detailsEvent);
+
+        // Also dispatch baseline event if baselineResponse exists
+        if (details.baselineResponse) {
+          const baselineEvent = new CustomEvent('showBaseline', {
+            detail: {
+              baseline: details.baselineResponse,
+              messageId: 'current'
+            }
+          });
+          document.dispatchEvent(baselineEvent);
+        }
       }
     });
   }, [dataStream]);

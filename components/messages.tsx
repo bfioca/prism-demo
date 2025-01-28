@@ -31,6 +31,7 @@ export function Messages({
 }) {
   const [thinkingMessage, setThinkingMessage] = useState<string>('');
   const lastProcessedIndex = useRef(-1);
+  const processedDetails = useRef(new Set<string>());
 
   useEffect(() => {
     if (!dataStream?.length) return;
@@ -42,16 +43,57 @@ export function Messages({
       if (delta.type === 'thinking') {
         setThinkingMessage(delta.content);
       } else if (delta.type === 'details') {
-        const event = new CustomEvent('showDetails', {
+        const details = JSON.parse(delta.content);
+
+        // Create a key that reflects the current step
+        const detailsKey = [
+          details.perspectives?.length && `perspectives:${details.perspectives.length}`,
+          details.baselineResponse && 'baseline',
+          details.firstPassSynthesis && 'synthesis',
+          details.evaluations?.length && `evaluations:${details.evaluations.length}`,
+          details.mediation && 'mediation'
+        ].filter(Boolean).join('-');
+
+        if (processedDetails.current.has(detailsKey)) {
+          return;
+        }
+        processedDetails.current.add(detailsKey);
+
+        // Update the last message with the new prism_data
+        setMessages((currentMessages) => {
+          const updatedMessages = [...currentMessages];
+          if (updatedMessages.length > 0) {
+            const lastMessage = updatedMessages[updatedMessages.length - 1];
+            updatedMessages[updatedMessages.length - 1] = {
+              ...lastMessage,
+              prism_data: details
+            };
+          }
+          return updatedMessages;
+        });
+
+        // Dispatch details event
+        const detailsEvent = new CustomEvent('showDetails', {
           detail: {
-            details: JSON.parse(delta.content),
+            details,
             messageId: 'current'
           }
         });
-        document.dispatchEvent(event);
+        document.dispatchEvent(detailsEvent);
+
+        // Also dispatch baseline event if baselineResponse exists
+        if (details.baselineResponse) {
+          const baselineEvent = new CustomEvent('showBaseline', {
+            detail: {
+              baseline: details.baselineResponse,
+              messageId: 'current'
+            }
+          });
+          document.dispatchEvent(baselineEvent);
+        }
       }
     });
-  }, [dataStream]);
+  }, [dataStream, setMessages]);
 
   return (
     <div className="flex-1 overflow-y-auto">

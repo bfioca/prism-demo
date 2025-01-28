@@ -55,13 +55,26 @@ function PureBlockMessages({
       if (delta.type === 'thinking' && isLoading) {
         setThinkingMessage(delta.content);
       } else if (delta.type === 'details') {
-        const event = new CustomEvent('showDetails', {
+        const details = JSON.parse(delta.content);
+        // Dispatch details event
+        const detailsEvent = new CustomEvent('showDetails', {
           detail: {
-            details: JSON.parse(delta.content),
+            details,
             messageId: 'current'
           }
         });
-        document.dispatchEvent(event);
+        document.dispatchEvent(detailsEvent);
+
+        // Also dispatch baseline event if baselineResponse exists
+        if (details.baselineResponse) {
+          const baselineEvent = new CustomEvent('showBaseline', {
+            detail: {
+              baseline: details.baselineResponse,
+              messageId: 'current'
+            }
+          });
+          document.dispatchEvent(baselineEvent);
+        }
       } else {
         setThinkingMessage('');
       }

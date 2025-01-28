@@ -184,8 +184,12 @@ export function DetailsPanel() {
       setIsLoading(true);
       const response = await fetch(`/api/message?messageId=${messageId}`);
       if (!response.ok) return;
-      const data = await response.json();
-      setDetails(data.prism_data || {});
+      try {
+        const data = await response.json();
+        setDetails(data.prism_data || {});
+      } catch (error) {
+        console.debug('Error parsing message details:', error);
+      }
     } catch (error) {
       console.error('Error fetching message details:', error);
     } finally {
