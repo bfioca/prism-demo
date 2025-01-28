@@ -34,19 +34,9 @@ export function Messages({
   const processedDetails = useRef(new Set<string>());
 
   useEffect(() => {
-    console.log('=== Effect Re-run ===');
-    console.log('dataStream changed:', dataStream);
-    console.log('=========================');
-
     if (!dataStream?.length) return;
 
     const newDeltas = dataStream.slice(lastProcessedIndex.current + 1);
-    console.log('=== DataStream Debug ===');
-    console.log('Total dataStream length:', dataStream.length);
-    console.log('Last processed index:', lastProcessedIndex.current);
-    console.log('New deltas:', newDeltas);
-    console.log('=========================');
-
     lastProcessedIndex.current = dataStream.length - 1;
 
     (newDeltas as DataStreamDelta[]).forEach((delta: DataStreamDelta) => {
@@ -64,14 +54,7 @@ export function Messages({
           details.mediation && 'mediation'
         ].filter(Boolean).join('-');
 
-        console.log('=== Processing Details ===');
-        console.log('Details key:', detailsKey);
-        console.log('Already processed?', processedDetails.current.has(detailsKey));
-        console.log('Current processed keys:', [...processedDetails.current]);
-        console.log('=========================');
-
         if (processedDetails.current.has(detailsKey)) {
-          console.log('Skipping already processed details');
           return;
         }
         processedDetails.current.add(detailsKey);
@@ -99,19 +82,14 @@ export function Messages({
         document.dispatchEvent(detailsEvent);
 
         // Also dispatch baseline event if baselineResponse exists
-        if (details.baselineResponse && detailsKey.startsWith('baseline:')) {
-          console.log('=== Dispatching Baseline Event ===');
-          console.log('From messages.tsx');
+        if (details.baselineResponse) {
           const baselineEvent = new CustomEvent('showBaseline', {
             detail: {
               baseline: details.baselineResponse,
-              messageId: 'current',
-              autoOpen: false
+              messageId: 'current'
             }
           });
-          console.log('Event being dispatched:', baselineEvent);
           document.dispatchEvent(baselineEvent);
-          console.log('=========================');
         }
       }
     });

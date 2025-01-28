@@ -70,8 +70,7 @@ function PureBlockMessages({
           const baselineEvent = new CustomEvent('showBaseline', {
             detail: {
               baseline: details.baselineResponse,
-              messageId: 'current',
-              autoOpen: false
+              messageId: 'current'
             }
           });
           document.dispatchEvent(baselineEvent);
