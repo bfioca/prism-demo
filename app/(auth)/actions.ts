@@ -27,18 +27,32 @@ export const login = async (
       password: formData.get('password'),
     });
 
-    await signIn('credentials', {
+    const result = await signIn('credentials', {
       email: validatedData.email,
       password: validatedData.password,
       redirect: false,
     });
 
-    return { status: 'success' };
+    if (result?.error) {
+      console.error('Sign in error:', result.error);
+      return { status: 'failed' };
+    }
+
+    if (result?.url) {
+      throw redirect(result.url);
+    }
+
+    throw redirect('/');
   } catch (error) {
     if (error instanceof z.ZodError) {
       return { status: 'invalid_data' };
     }
 
+    if ((error as any)?.digest?.startsWith('NEXT_REDIRECT')) {
+      throw error;
+    }
+
+    console.error('Login error:', error);
     return { status: 'failed' };
   }
 };
