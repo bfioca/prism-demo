@@ -68,6 +68,7 @@ export function PureMessageActions({
     keyAssumptions,
     isPrismResponse,
     prism_data: message.prism_data,
+    hasBaselineResponse: message.prism_data?.baselineResponse ? true : false,
     contentMatches: {
       keyAssumptionsMatch: (message.content as string).match(/\d+\.\s*\*\*Key Assumptions\*\*:?\s*([\s\S]*?)(?=\s*\d+\.\s*\*\*Response\*\*)/i),
       responseMatch: (message.content as string).match(/\d+\.\s*\*\*Response\*\*:?\s*([\s\S]*?)$/i)
@@ -244,6 +245,27 @@ export function PureMessageActions({
               </TooltipTrigger>
               <TooltipContent>View Response Details</TooltipContent>
             </Tooltip>
+
+            {message.prism_data?.baselineResponse && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    className="py-1 px-2 h-fit text-muted-foreground text-sm"
+                    variant="outline"
+                    onClick={() => {
+                      document.dispatchEvent(new CustomEvent('showBaseline', {
+                        detail: {
+                          baseline: message.prism_data?.baselineResponse || ''
+                        }
+                      }));
+                    }}
+                  >
+                    View Baseline
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>View Baseline Response</TooltipContent>
+              </Tooltip>
+            )}
           </>
         )}
       </div>

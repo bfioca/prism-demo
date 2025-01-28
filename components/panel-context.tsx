@@ -1,17 +1,20 @@
 'use client';
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState } from 'react';
 
-type PanelType = 'assumptions' | 'details' | null;
+export type PanelType = 'assumptions' | 'details' | 'baseline' | null;
 
 interface PanelContextType {
   activePanel: PanelType;
   setActivePanel: (panel: PanelType) => void;
 }
 
-const PanelContext = createContext<PanelContextType | undefined>(undefined);
+const PanelContext = createContext<PanelContextType>({
+  activePanel: null,
+  setActivePanel: () => {},
+});
 
-export function PanelProvider({ children }: { children: ReactNode }) {
+export function PanelProvider({ children }: { children: React.ReactNode }) {
   const [activePanel, setActivePanel] = useState<PanelType>(null);
 
   return (
@@ -21,10 +24,4 @@ export function PanelProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function usePanel() {
-  const context = useContext(PanelContext);
-  if (context === undefined) {
-    throw new Error('usePanel must be used within a PanelProvider');
-  }
-  return context;
-}
+export const usePanel = () => useContext(PanelContext);

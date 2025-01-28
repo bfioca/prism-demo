@@ -4,6 +4,7 @@ import { AppSidebar } from '@/components/app-sidebar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { AssumptionsPanel } from '@/components/assumptions-panel';
 import { DetailsPanel } from '@/components/details-panel';
+import { BaselinePanel } from '@/components/baseline-panel';
 import { PanelProvider } from '@/components/panel-context';
 import { RightPanel } from '@/components/right-panel';
 
@@ -40,6 +41,7 @@ export default async function Layout({
                     <div className="absolute inset-y-0 flex flex-col">
                       <AssumptionsPanel />
                       <DetailsPanel />
+                      <BaselinePanel />
                     </div>
                   </RightPanel>
                 </div>
