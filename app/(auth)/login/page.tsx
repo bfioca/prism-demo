@@ -3,18 +3,17 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useActionState, useEffect, useState, useTransition } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { AuthForm } from '@/components/auth-form';
 import { SubmitButton } from '@/components/submit-button';
 import { Button } from '@/components/ui/button';
 
-import { login, loginWithGoogle, type LoginActionState, type GoogleLoginActionState } from '../actions';
+import { login, googleAuthenticate, type LoginActionState } from '../actions';
 
 export default function Page() {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
 
   const [email, setEmail] = useState('');
   const [isSuccessful, setIsSuccessful] = useState(false);
@@ -26,12 +25,7 @@ export default function Page() {
     },
   );
 
-  const [googleState, googleAction] = useActionState<GoogleLoginActionState>(
-    loginWithGoogle,
-    {
-      status: 'idle',
-    },
-  );
+  const [googleState, googleAction] = useActionState(googleAuthenticate, undefined);
 
   useEffect(() => {
     if (state.status === 'failed') {
@@ -45,22 +39,14 @@ export default function Page() {
   }, [state.status, router]);
 
   useEffect(() => {
-    if (googleState.status === 'failed') {
-      toast.error('Something went wrong with Google login');
-    } else if (googleState.status === 'success') {
-      router.refresh();
+    if (googleState) {
+      toast.error(googleState);
     }
-  }, [googleState.status, router]);
+  }, [googleState]);
 
   const handleSubmit = (formData: FormData) => {
     setEmail(formData.get('email') as string);
     formAction(formData);
-  };
-
-  const handleGoogleLogin = () => {
-    startTransition(() => {
-      googleAction();
-    });
   };
 
   return (
@@ -85,18 +71,12 @@ export default function Page() {
           </div>
 
           <div className="mt-8 flex flex-col gap-6">
-            <Button
-              variant="outline"
-              onClick={handleGoogleLogin}
-              disabled={googleState.status === 'in_progress' || isPending}
-              className="w-full"
-            >
-              {(googleState.status === 'in_progress' || isPending) ? (
-                <div className="flex items-center gap-2">
-                  <div className="size-4 animate-spin rounded-full border-2 border-gray-500 border-t-transparent" />
-                  Loading...
-                </div>
-              ) : (
+            <form action={googleAction}>
+              <Button
+                type="submit"
+                variant="outline"
+                className="w-full"
+              >
                 <div className="flex items-center gap-2">
                   <svg className="size-5" viewBox="0 0 24 24">
                     <path
@@ -118,8 +98,8 @@ export default function Page() {
                   </svg>
                   Continue with Google
                 </div>
-              )}
-            </Button>
+              </Button>
+            </form>
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300 dark:border-zinc-700" />

@@ -97,7 +97,6 @@ export const loginWithGoogle = async (
       redirect: false,
       callbackUrl: '/',
     });
-    console.log('Google login success', result);
 
     if (result?.url) {
       throw redirect(result.url);
@@ -117,12 +116,10 @@ export const registerWithGoogle = async (
   _: GoogleLoginActionState,
 ): Promise<GoogleLoginActionState> => {
   try {
-    console.log('Starting Google registration...');
     const result = await signIn('google', {
       redirect: false,
       callbackUrl: '/',
     });
-    console.log('Google signIn result:', result);
     return { status: 'success' };
   } catch (error: any) {
     // Check if this is a redirect error from NextAuth
@@ -143,8 +140,16 @@ export async function googleAuthenticate(
   formData: FormData,
 ) {
   try {
-    await signIn('google');
-  } catch (error) {
+    await signIn('google', {
+      callbackUrl: '/',
+      redirect: true,
+    });
+  } catch (error: any) {
+    // If it's a redirect error, we want to let it happen
+    if (error?.digest?.startsWith('NEXT_REDIRECT')) {
+      throw error;
+    }
+    console.error('Google auth error:', error);
     if (error instanceof AuthError) {
       return 'Google sign in failed';
     }

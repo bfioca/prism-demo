@@ -3,6 +3,9 @@ import type { NextAuthConfig } from 'next-auth';
 export const authConfig = {
   pages: {
     signIn: '/login',
+    signOut: '/',
+    error: '/login',
+    verifyRequest: '/login',
     newUser: '/',
   },
   providers: [
@@ -15,18 +18,26 @@ export const authConfig = {
       const isOnChat = nextUrl.pathname.startsWith('/');
       const isOnRegister = nextUrl.pathname.startsWith('/register');
       const isOnLogin = nextUrl.pathname.startsWith('/login');
+      const isAuthCallback = nextUrl.pathname.startsWith('/api/auth/callback');
 
+      // Allow OAuth callbacks
+      if (isAuthCallback) {
+        return true;
+      }
+
+      // Always redirect logged-in users to home if they try to access auth pages
       if (isLoggedIn && (isOnLogin || isOnRegister)) {
         return Response.redirect(new URL('/', nextUrl));
       }
 
+      // Allow access to auth pages for non-logged-in users
       if (isOnRegister || isOnLogin) {
-        return true; // Always allow access to register and login pages
+        return true;
       }
 
-      if (isOnChat) {
-        if (isLoggedIn) return true;
-        return false; // Redirect unauthenticated users to login page
+      // For all other pages, require authentication
+      if (!isLoggedIn) {
+        return Response.redirect(new URL('/login', nextUrl));
       }
 
       return true;

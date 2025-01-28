@@ -100,16 +100,6 @@ const PurePreviewMessage = ({
     };
   }, [message]);
 
-  // Debug logs for component state
-  // console.log('Component state:', {
-  //   id: message.id,
-  //   role: message.role,
-  //   content: message.content?.substring(0, 100) + '...',
-  //   isLoading,
-  //   mode,
-  //   isComplete
-  // });
-
   return (
     <AnimatePresence>
       <motion.div

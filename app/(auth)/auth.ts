@@ -33,7 +33,6 @@ export const {
     Credentials({
       credentials: {},
       async authorize({ email, password }: any) {
-        console.log('Credentials authorize called with email:', email);
         const users = await getUser(email);
         if (users.length === 0) return null;
         // biome-ignore lint: Forbidden non-null assertion.
@@ -45,16 +44,11 @@ export const {
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
-      console.log('signIn callback', {
-        user,
-        accountProvider: account?.provider,
-        profile
-      });
 
       if (account?.provider === 'google') {
         const email = user.email;
         if (!email) {
-          console.log('No email provided by Google');
+          console.error('No email provided by Google');
           return false;
         }
 
@@ -63,10 +57,8 @@ export const {
           console.log('Existing user check:', existingUser ? 'found' : 'not found');
 
           if (!existingUser) {
-            console.log('Creating new user for:', email);
             const randomPassword = generateRandomString();
             await createUser(email, randomPassword);
-            console.log('User created successfully');
           }
           return true;
         } catch (error) {
@@ -76,25 +68,59 @@ export const {
       }
       return true;
     },
-    async jwt({ token, user, account }) {
-      console.log('jwt callback', { token, user, accountProvider: account?.provider });
+    async jwt({ token, user, account, trigger }) {
+      console.debug('jwt callback', {
+        token,
+        user,
+        accountProvider: account?.provider,
+        trigger,
+        tokenKeys: Object.keys(token || {}),
+        userKeys: Object.keys(user || {})
+      });
+
       if (user) {
         token.id = user.id;
       }
       return token;
     },
     async session({ session, token }: { session: ExtendedSession; token: any }) {
-      console.log('session callback', { session, token });
+      console.debug('session callback', {
+        session: {
+          ...session,
+          user: session?.user ? {
+            ...session.user,
+            keys: Object.keys(session.user)
+          } : null
+        },
+        token: {
+          ...token,
+          keys: Object.keys(token)
+        }
+      });
+
       if (token) {
         session.user.id = token.id;
       }
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // Allows relative callback URLs
-      if (url.startsWith("/")) return `${baseUrl}${url}`;
-      // Allows callback URLs on the same origin
-      else if (new URL(url).origin === baseUrl) return url;
+      // Always redirect to home after sign in
+      if (url.includes('/api/auth/callback/google')) {
+        return '/';
+      }
+
+      // Handle other redirects
+      if (url.startsWith('/')) {
+        const finalUrl = `${baseUrl}${url}`;
+        return finalUrl;
+      } else if (new URL(url).origin === baseUrl) {
+        // If we're already logged in and trying to access auth pages, redirect to home
+        if (url.includes('/login') || url.includes('/register')) {
+          return '/';
+        }
+        return url;
+      }
+
       return baseUrl;
     },
   },
