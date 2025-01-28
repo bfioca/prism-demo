@@ -249,11 +249,11 @@ export async function POST(request: Request) {
         );
         console.info('Final synthesis prompt:', finalPrompt);
 
+        const messageId = generateUUID();
         const finalResult = streamText({
           model: customModel(model.apiIdentifier),
           messages: [{ role: 'system', content: finalPrompt }, ...messages],
           temperature: 0.2,
-          experimental_generateMessageId: generateUUID,
           experimental_telemetry: {
             isEnabled: true,
             functionId: 'stream-text',
@@ -266,7 +266,7 @@ export async function POST(request: Request) {
               try {
                 await saveMessages({
                   messages: [{
-                    id: response.id,
+                    id: messageId,
                     chatId: id,
                     role: 'assistant',
                     content: response.text,
@@ -275,13 +275,18 @@ export async function POST(request: Request) {
                   }],
                 });
                 dataStream.writeMessageAnnotation({
-                  messageIdFromServer: response.id,
+                  messageIdFromServer: messageId,
                 });
               } catch (error) {
                 console.error('Failed to save chat');
               }
             }
           }
+        });
+
+        // Write the message ID early so it's available during streaming
+        dataStream.writeMessageAnnotation({
+          messageIdFromServer: messageId,
         });
 
         finalResult.mergeIntoDataStream(dataStream);
