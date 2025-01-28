@@ -253,6 +253,7 @@ export async function POST(request: Request) {
           model: customModel(model.apiIdentifier),
           messages: [{ role: 'system', content: finalPrompt }, ...messages],
           temperature: 0.2,
+          experimental_generateMessageId: generateUUID,
           experimental_telemetry: {
             isEnabled: true,
             functionId: 'stream-text',
@@ -263,10 +264,9 @@ export async function POST(request: Request) {
           onFinish: async (response) => {
             if (session.user?.id) {
               try {
-                const messageId = generateUUID();
                 await saveMessages({
                   messages: [{
-                    id: messageId,
+                    id: response.id,
                     chatId: id,
                     role: 'assistant',
                     content: response.text,
@@ -275,7 +275,7 @@ export async function POST(request: Request) {
                   }],
                 });
                 dataStream.writeMessageAnnotation({
-                  messageIdFromServer: messageId,
+                  messageIdFromServer: response.id,
                 });
               } catch (error) {
                 console.error('Failed to save chat');

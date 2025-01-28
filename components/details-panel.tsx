@@ -198,23 +198,32 @@ export function DetailsPanel() {
   };
 
   useEffect(() => {
-    const handleShowDetails = (e: CustomEvent<{ details: any; messageId: string }>) => {
+    const handleShowDetails = (e: CustomEvent<{ details: any; messageId: string; isStreaming?: boolean }>) => {
       setMessageId(e.detail.messageId);
-      setActivePanel('details');
 
-      if (e.detail.details && Object.keys(e.detail.details).length > 0) {
+      // Always set details for streaming messages
+      if (e.detail.isStreaming) {
         setDetails(e.detail.details);
-      } else if (e.detail.messageId && !details) {
-        fetchMessageDetails(e.detail.messageId);
+        setActivePanel('details');
+        return;
+      }
+
+      // For historical messages, fetch if needed
+      if (e.detail.messageId !== messageId) {
+        setActivePanel('details');
+        if (e.detail.details && Object.keys(e.detail.details).length > 0) {
+          setDetails(e.detail.details);
+        } else {
+          fetchMessageDetails(e.detail.messageId);
+        }
       }
     };
 
     document.addEventListener('showDetails', handleShowDetails as EventListener);
-
     return () => {
       document.removeEventListener('showDetails', handleShowDetails as EventListener);
     };
-  }, [setActivePanel]);
+  }, [setActivePanel, messageId]);
 
   const hasSection = (sectionName: keyof typeof details) => {
     return details && details[sectionName] && details[sectionName].length > 0;

@@ -83,7 +83,8 @@ export function Messages({
         const detailsEvent = new CustomEvent('showDetails', {
           detail: {
             details,
-            messageId: 'current'
+            messageId: 'current',
+            isStreaming: true
           }
         });
         document.dispatchEvent(detailsEvent);
@@ -93,7 +94,8 @@ export function Messages({
           const baselineEvent = new CustomEvent('showBaseline', {
             detail: {
               baseline: details.baselineResponse,
-              messageId: 'current'
+              messageId: 'current',
+              isStreaming: true
             }
           });
           document.dispatchEvent(baselineEvent);

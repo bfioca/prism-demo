@@ -37,20 +37,24 @@ export function BaselinePanel() {
   };
 
   useEffect(() => {
-    const handleShowBaseline = (e: CustomEvent<{ baseline: string; messageId: string }>) => {
-      console.log('=== Baseline Event Handler Called ===');
-      console.log('Event type:', e.type);
-      console.log('Event detail:', e.detail);
-      console.log('=========================');
-
+    const handleShowBaseline = (e: CustomEvent<{ baseline: string; messageId: string; isStreaming?: boolean }>) => {
       setMessageId(e.detail.messageId);
 
-      if (e.detail.baseline) {
-        console.log('Setting baseline from event data');
-        setBaseline(e.detail.baseline);
-      } else if (e.detail.messageId) {
-        console.log('Fetching baseline data');
-        fetchMessageBaseline(e.detail.messageId);
+      // For streaming messages, just update the content
+      if (e.detail.isStreaming) {
+        if (e.detail.baseline) {
+          setBaseline(e.detail.baseline);
+        }
+        return;
+      }
+
+      // For historical messages, fetch if needed
+      if (e.detail.messageId !== messageId) {
+        if (e.detail.baseline) {
+          setBaseline(e.detail.baseline);
+        } else {
+          fetchMessageBaseline(e.detail.messageId);
+        }
       }
     };
 
@@ -61,7 +65,7 @@ export function BaselinePanel() {
       document.removeEventListener('showBaseline', handleShowBaseline as EventListener);
       console.log('=== Baseline Event Listener Removed ===');
     };
-  }, []);
+  }, [messageId]);
 
   return (
     <AnimatePresence>
