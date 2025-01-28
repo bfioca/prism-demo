@@ -217,7 +217,7 @@ export async function POST(request: Request) {
         const mediationPrompt = multiPerspectiveMediationPrompt(
           messages[messages.length - 1].content as string,
           evaluationResponses.map((r) => r.perspective),
-          baselineResponse,
+          firstPassResponse,
           evaluationResponses.map((r) => r.text)
         );
 
@@ -244,7 +244,7 @@ export async function POST(request: Request) {
         const finalPrompt = finalSynthesisPrompt(
           messages[messages.length - 1].content as string,
           WORLDVIEWS,
-          baselineResponse,
+          firstPassResponse,
           mediationResult.text
         );
         console.info('Final synthesis prompt:', finalPrompt);
