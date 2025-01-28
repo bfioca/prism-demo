@@ -45,6 +45,13 @@ export function Messages({
       } else if (delta.type === 'details') {
         const details = JSON.parse(delta.content);
 
+        // Reset processed details if this is the start of a new message (first perspective)
+        if (details.perspectives?.length === 1 && !details.baselineResponse) {
+          processedDetails.current.clear();
+          // Also set the active panel to 'details' when a new message starts
+          document.dispatchEvent(new CustomEvent('setPanel', { detail: { panel: 'details' } }));
+        }
+
         // Create a key that reflects the current step
         const detailsKey = [
           details.perspectives?.length && `perspectives:${details.perspectives.length}`,

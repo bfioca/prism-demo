@@ -26,6 +26,18 @@ export function PanelProvider({ children }: { children: React.ReactNode }) {
     }
   }, [pathname]);
 
+  // Handle panel changes from events
+  useEffect(() => {
+    const handleSetPanel = (e: CustomEvent<{ panel: PanelType }>) => {
+      setActivePanel(e.detail.panel);
+    };
+
+    document.addEventListener('setPanel', handleSetPanel as EventListener);
+    return () => {
+      document.removeEventListener('setPanel', handleSetPanel as EventListener);
+    };
+  }, []);
+
   return (
     <PanelContext.Provider value={{ activePanel, setActivePanel }}>
       {children}
