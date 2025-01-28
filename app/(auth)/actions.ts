@@ -1,6 +1,8 @@
 'use server';
 
 import { z } from 'zod';
+import { redirect } from 'next/navigation';
+import { AuthError } from 'next-auth';
 
 import { createUser, getUser } from '@/lib/db/queries';
 
@@ -82,3 +84,70 @@ export const register = async (
     return { status: 'failed' };
   }
 };
+
+export interface GoogleLoginActionState {
+  status: 'idle' | 'in_progress' | 'success' | 'failed';
+}
+
+export const loginWithGoogle = async (
+  _: GoogleLoginActionState,
+): Promise<GoogleLoginActionState> => {
+  try {
+    const result = await signIn('google', {
+      redirect: false,
+      callbackUrl: '/',
+    });
+    console.log('Google login success', result);
+
+    if (result?.url) {
+      throw redirect(result.url);
+    }
+
+    return { status: 'success' };
+  } catch (error) {
+    if ((error as any)?.type === 'redirect') {
+      throw error;
+    }
+    console.error('Google login error:', error);
+    return { status: 'failed' };
+  }
+};
+
+export const registerWithGoogle = async (
+  _: GoogleLoginActionState,
+): Promise<GoogleLoginActionState> => {
+  try {
+    console.log('Starting Google registration...');
+    const result = await signIn('google', {
+      redirect: false,
+      callbackUrl: '/',
+    });
+    console.log('Google signIn result:', result);
+    return { status: 'success' };
+  } catch (error: any) {
+    // Check if this is a redirect error from NextAuth
+    if (error?.digest?.startsWith('NEXT_REDIRECT')) {
+      // Extract the URL from the digest
+      const redirectUrl = error.digest.split(';')[2];
+      if (redirectUrl) {
+        throw redirect(redirectUrl);
+      }
+    }
+    console.error('Google register error:', error);
+    return { status: 'failed' };
+  }
+};
+
+export async function googleAuthenticate(
+  prevState: string | undefined,
+  formData: FormData,
+) {
+  try {
+    await signIn('google');
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return 'Google sign in failed';
+    }
+    throw error;
+  }
+}
