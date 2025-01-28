@@ -1,6 +1,7 @@
 'use client';
 
 import { startTransition, useMemo, useOptimistic, useState } from 'react';
+import { useSession } from 'next-auth/react';
 
 import { saveModelId } from '@/app/(chat)/actions';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { models } from '@/lib/ai/models';
+
+import { getModelsForUser } from '@/lib/ai/models';
 import { cn } from '@/lib/utils';
 
 import { CheckCircleFillIcon, ChevronDownIcon } from './icons';
@@ -24,10 +26,16 @@ export function ModelSelector({
   const [open, setOpen] = useState(false);
   const [optimisticModelId, setOptimisticModelId] =
     useOptimistic(selectedModelId);
+  const { data: session } = useSession();
+
+  const availableModels = useMemo(
+    () => getModelsForUser(session?.user?.email),
+    [session?.user?.email]
+  );
 
   const selectedModel = useMemo(
-    () => models.find((model) => model.id === optimisticModelId),
-    [optimisticModelId],
+    () => availableModels.find((model) => model.id === optimisticModelId),
+    [optimisticModelId, availableModels],
   );
 
   return (
@@ -45,7 +53,7 @@ export function ModelSelector({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-[300px]">
-        {models.map((model) => (
+        {availableModels.map((model) => (
           <DropdownMenuItem
             key={model.id}
             onSelect={() => {
