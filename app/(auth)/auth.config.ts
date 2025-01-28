@@ -3,6 +3,9 @@ import type { NextAuthConfig } from 'next-auth';
 export const authConfig = {
   pages: {
     signIn: '/login',
+    signOut: '/',
+    error: '/login',
+    verifyRequest: '/login',
     newUser: '/',
   },
   providers: [
@@ -12,25 +15,40 @@ export const authConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
-      const isOnChat = nextUrl.pathname.startsWith('/');
-      const isOnRegister = nextUrl.pathname.startsWith('/register');
-      const isOnLogin = nextUrl.pathname.startsWith('/login');
+      const isAuthCallback = nextUrl.pathname.startsWith('/api/auth/callback');
+      const isPublicRoute =
+        nextUrl.pathname.startsWith('/login') ||
+        nextUrl.pathname.startsWith('/register') ||
+        nextUrl.pathname.match(/^\/chat\/[^/]+$/); // Matches /chat/{id}
 
-      if (isLoggedIn && (isOnLogin || isOnRegister)) {
-        return Response.redirect(new URL('/', nextUrl as unknown as URL));
+      console.log('Auth check:', {
+        path: nextUrl.pathname,
+        isLoggedIn,
+        isAuthCallback,
+        isPublicRoute,
+      });
+
+      // Allow OAuth callbacks
+      if (isAuthCallback) {
+        return true;
       }
 
-      if (isOnRegister || isOnLogin) {
-        return true; // Always allow access to register and login pages
+      // Always redirect logged-in users to home if they try to access auth pages
+      if (isLoggedIn && (nextUrl.pathname.startsWith('/login') || nextUrl.pathname.startsWith('/register'))) {
+        console.log('Redirecting logged-in user from auth page to home');
+        return Response.redirect(new URL('/', nextUrl));
       }
 
-      if (isOnChat) {
-        if (isLoggedIn) return true;
-        return false; // Redirect unauthenticated users to login page
+      // Allow access to public routes
+      if (isPublicRoute) {
+        console.log('Allowing access to public route:', nextUrl.pathname);
+        return true;
       }
 
-      if (isLoggedIn) {
-        return Response.redirect(new URL('/', nextUrl as unknown as URL));
+      // For all other pages, require authentication
+      if (!isLoggedIn) {
+        console.log('Redirecting unauthenticated user to login');
+        return Response.redirect(new URL('/login', nextUrl));
       }
 
       return true;

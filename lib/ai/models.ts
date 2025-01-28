@@ -1,4 +1,5 @@
 // Define your models here.
+import { isPSLEmail } from '@/lib/utils';
 
 export interface Model {
   id: string;
@@ -34,4 +35,11 @@ export const models: Array<Model> = [
   // }
 ] as const;
 
-export const DEFAULT_MODEL_NAME: string = 'gpt-4o';
+export const DEFAULT_MODEL_NAME: string = 'gpt-4o-mini';
+
+export function getModelsForUser(email: string | null | undefined): Array<Model> {
+  if (isPSLEmail(email)) {
+    return models;
+  }
+  return models.filter(model => model.id === DEFAULT_MODEL_NAME);
+}

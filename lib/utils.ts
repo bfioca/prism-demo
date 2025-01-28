@@ -223,3 +223,8 @@ export function getMessageIdFromAnnotations(message: Message) {
   // @ts-expect-error messageIdFromServer is not defined in MessageAnnotation
   return annotation.messageIdFromServer;
 }
+
+export function isPSLEmail(email: string | null | undefined): boolean {
+  if (!email) return false;
+  return email.endsWith('@psl.com') || email.endsWith('@pioneersquarelabs.com');
+}

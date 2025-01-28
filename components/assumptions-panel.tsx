@@ -16,10 +16,6 @@ export function AssumptionsPanel() {
 
   useEffect(() => {
     const handleShowAssumptions = (e: CustomEvent<{ assumptions: string[]; messageId: string }>) => {
-      console.log('AssumptionsPanel received:', {
-        assumptions: e.detail.assumptions,
-        messageId: e.detail.messageId
-      });
       setAssumptions(e.detail.assumptions);
       setMessageId(e.detail.messageId);
       setActivePanel('assumptions');

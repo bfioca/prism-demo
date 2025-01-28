@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Toaster } from 'sonner';
 
-import { ThemeProvider } from '@/components/theme-provider';
+import { Providers } from '@/components/providers';
 
 import './globals.css';
 
@@ -57,7 +57,7 @@ export default async function RootLayout({
         />
       </head>
       <body className="antialiased">
-        <ThemeProvider
+        <Providers
           attribute="class"
           defaultTheme="system"
           enableSystem
@@ -65,7 +65,7 @@ export default async function RootLayout({
         >
           <Toaster position="top-center" />
           {children}
-        </ThemeProvider>
+        </Providers>
       </body>
     </html>
   );
