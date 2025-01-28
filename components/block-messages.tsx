@@ -8,7 +8,7 @@ import equal from 'fast-deep-equal';
 import { UIBlock } from './block';
 
 type DataStreamDelta = {
-  type: 'thinking' | string;
+  type: 'thinking' | 'details' | string;
   content: string;
 };
 
@@ -54,6 +54,14 @@ function PureBlockMessages({
     (newDeltas as DataStreamDelta[]).forEach((delta: DataStreamDelta) => {
       if (delta.type === 'thinking' && isLoading) {
         setThinkingMessage(delta.content);
+      } else if (delta.type === 'details') {
+        const event = new CustomEvent('showDetails', {
+          detail: {
+            details: JSON.parse(delta.content),
+            messageId: 'current'
+          }
+        });
+        document.dispatchEvent(event);
       } else {
         setThinkingMessage('');
       }

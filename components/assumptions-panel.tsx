@@ -8,11 +8,11 @@ import { CrossIcon } from './icons';
 
 export function AssumptionsPanel() {
   const [isOpen, setIsOpen] = useState(false);
-  const [assumptions, setAssumptions] = useState<string>('');
+  const [assumptions, setAssumptions] = useState<string[]>([]);
   const [messageId, setMessageId] = useState<string>('');
 
   useEffect(() => {
-    const handleShowAssumptions = (e: CustomEvent<{ assumptions: string; messageId: string }>) => {
+    const handleShowAssumptions = (e: CustomEvent<{ assumptions: string[]; messageId: string }>) => {
       console.log('AssumptionsPanel received:', {
         assumptions: e.detail.assumptions,
         messageId: e.detail.messageId
@@ -48,11 +48,13 @@ export function AssumptionsPanel() {
               </Button>
             </div>
             <div className="flex-1 overflow-y-auto pl-4">
-              <Markdown>
-                {assumptions.split('\n').map(line =>
-                  line.startsWith('-') ? '  ' + line : line
-                ).join('\n')}
-              </Markdown>
+              <div className="prose prose-sm max-w-none space-y-4 prose-ul:text-foreground prose-li:marker:text-foreground">
+                <Markdown>
+                  {assumptions.map((assumption, i) =>
+                    `- ${assumption}\n`
+                  ).join('\n')}
+                </Markdown>
+              </div>
             </div>
           </div>
         </motion.div>

@@ -231,14 +231,12 @@ export function PureMessageActions({
                   className="py-1 px-2 h-fit text-muted-foreground text-sm"
                   variant="outline"
                   onClick={() => {
-                    if (message.prism_data) {
-                      document.dispatchEvent(new CustomEvent('showDetails', {
-                        detail: {
-                          details: message.prism_data,
-                          messageId: message.id
-                        }
-                      }));
-                    }
+                    document.dispatchEvent(new CustomEvent('showDetails', {
+                      detail: {
+                        details: message.prism_data || {},
+                        messageId: message.id
+                      }
+                    }));
                   }}
                 >
                   View Details

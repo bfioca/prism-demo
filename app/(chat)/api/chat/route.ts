@@ -127,10 +127,15 @@ export async function POST(request: Request) {
             temperature: 0.2,
           });
           console.info('Generated text for perspective:', text);
-          // Store in intermediary data
+          // Store in intermediary data and stream immediately
           intermediaryData.perspectives.push({
             perspective: WORLDVIEWS[index],
             response: text
+          });
+          // Stream the updated details after each perspective
+          dataStream.writeData({
+            type: 'details',
+            content: JSON.stringify(intermediaryData)
           });
           return text;
         }));
@@ -154,8 +159,12 @@ export async function POST(request: Request) {
           temperature: 0.2,
         });
 
-        // Store first pass synthesis
+        // Store first pass synthesis and stream update
         intermediaryData.firstPassSynthesis = firstPassResponse.text;
+        dataStream.writeData({
+          type: 'details',
+          content: JSON.stringify(intermediaryData)
+        });
 
         console.info('Synthesized text:', firstPassResponse.text);
         dataStream.writeData({ type: 'thinking', content:  '(3/5) Evaluating the first pass response...' });
@@ -169,10 +178,15 @@ export async function POST(request: Request) {
             temperature: 0.2,
           });
           console.info('Generated text for evaluation:', text);
-          // Store in intermediary data
+          // Store in intermediary data and stream immediately
           intermediaryData.evaluations.push({
             perspective: promptMap.perspective,
             response: text
+          });
+          // Stream the updated details after each evaluation
+          dataStream.writeData({
+            type: 'details',
+            content: JSON.stringify(intermediaryData)
           });
           return { text, perspective: promptMap.perspective };
         }));
@@ -195,8 +209,12 @@ export async function POST(request: Request) {
           temperature: 0.2,
         });
 
-        // Store mediation result
+        // Store mediation result and stream update
         intermediaryData.mediation = mediationResult.text;
+        dataStream.writeData({
+          type: 'details',
+          content: JSON.stringify(intermediaryData)
+        });
 
         console.info('Mediation result:', mediationResult.text);
         console.info('Complete intermediary data:', intermediaryData);

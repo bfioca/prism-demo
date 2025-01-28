@@ -20,7 +20,8 @@ type DataStreamDelta = {
     | 'finish'
     | 'user-message-id'
     | 'kind'
-    | 'thinking';
+    | 'thinking'
+    | 'details';
   content: string | Suggestion;
 };
 
@@ -142,6 +143,14 @@ export function ChatStreamHandler({
     (newDeltas as DataStreamDelta[]).forEach((delta: DataStreamDelta) => {
       if (delta.type === 'thinking') {
         setThinkingMessage(delta.content as string);
+      } else if (delta.type === 'details') {
+        const event = new CustomEvent('showDetails', {
+          detail: {
+            details: JSON.parse(delta.content as string),
+            messageId: 'current'
+          }
+        });
+        document.dispatchEvent(event);
       }
     });
   }, [dataStream]);

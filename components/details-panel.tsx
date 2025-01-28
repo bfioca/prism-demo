@@ -178,7 +178,7 @@ export function DetailsPanel() {
 
   useEffect(() => {
     const handleShowDetails = (e: CustomEvent<{ details: any; messageId: string }>) => {
-      setDetails(e.detail.details);
+      setDetails(e.detail.details || {});
       setMessageId(e.detail.messageId);
       setIsOpen(true);
     };
@@ -197,6 +197,13 @@ export function DetailsPanel() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  const hasSection = (sectionName: keyof typeof details) => {
+    return details && details[sectionName] && details[sectionName].length > 0;
+  };
+
+  const hasSynthesis = () => details && details.firstPassSynthesis;
+  const hasMediation = () => details && details.mediation;
 
   return (
     <AnimatePresence>
@@ -226,51 +233,78 @@ export function DetailsPanel() {
 
             <div className="flex-1 overflow-y-auto">
               <div className="p-6 space-y-6">
-                <Section title="Gathering perspectives" step={1}>
-                  <div className="space-y-4">
-                    {details?.perspectives.map((p: any, i: number) => (
-                      <PerspectiveCard
-                        key={i}
-                        worldview={WORLDVIEW_CONFIG[i]}
-                        perspective={p.perspective}
-                        response={p.response}
-                        index={i}
-                      />
-                    ))}
+                {!hasSection('perspectives') && !hasSynthesis() && !hasSection('evaluations') && !hasMediation() ? (
+                  <div className="flex items-center justify-center h-32 text-muted-foreground">
+                    <motion.div
+                      animate={{
+                        opacity: [0.5, 1, 0.5],
+                      }}
+                      transition={{
+                        duration: 1.5,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                    >
+                      Loading details...
+                    </motion.div>
                   </div>
-                </Section>
+                ) : (
+                  <>
+                    {hasSection('perspectives') && (
+                      <Section title="Gathering perspectives" step={1}>
+                        <div className="space-y-4">
+                          {details?.perspectives.map((p: any, i: number) => (
+                            <PerspectiveCard
+                              key={i}
+                              worldview={WORLDVIEW_CONFIG[i]}
+                              perspective={p.perspective}
+                              response={p.response}
+                              index={i}
+                            />
+                          ))}
+                        </div>
+                      </Section>
+                    )}
 
-                <Section title="Initial synthesis" step={2}>
-                  <div className={cn(
-                    "prose prose-sm max-w-none",
-                    "text-foreground/90"
-                  )}>
-                    <Markdown>{details?.firstPassSynthesis}</Markdown>
-                  </div>
-                </Section>
+                    {hasSynthesis() && (
+                      <Section title="Initial synthesis" step={2}>
+                        <div className={cn(
+                          "prose prose-sm max-w-none",
+                          "text-foreground/90"
+                        )}>
+                          <Markdown>{details?.firstPassSynthesis}</Markdown>
+                        </div>
+                      </Section>
+                    )}
 
-                <Section title="Evaluating perspectives" step={3}>
-                  <div className="space-y-4">
-                    {details?.evaluations.map((e: any, i: number) => (
-                      <PerspectiveCard
-                        key={i}
-                        worldview={WORLDVIEW_CONFIG[i]}
-                        perspective={e.perspective}
-                        response={e.response}
-                        index={i}
-                      />
-                    ))}
-                  </div>
-                </Section>
+                    {hasSection('evaluations') && (
+                      <Section title="Evaluating perspectives" step={3}>
+                        <div className="space-y-4">
+                          {details?.evaluations.map((e: any, i: number) => (
+                            <PerspectiveCard
+                              key={i}
+                              worldview={WORLDVIEW_CONFIG[i]}
+                              perspective={e.perspective}
+                              response={e.response}
+                              index={i}
+                            />
+                          ))}
+                        </div>
+                      </Section>
+                    )}
 
-                <Section title="Mediating conflicts" step={4}>
-                  <div className={cn(
-                    "prose prose-sm max-w-none",
-                    "text-foreground/90"
-                  )}>
-                    <Markdown>{details?.mediation}</Markdown>
-                  </div>
-                </Section>
+                    {hasMediation() && (
+                      <Section title="Mediating conflicts" step={4}>
+                        <div className={cn(
+                          "prose prose-sm max-w-none",
+                          "text-foreground/90"
+                        )}>
+                          <Markdown>{details?.mediation}</Markdown>
+                        </div>
+                      </Section>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           </div>

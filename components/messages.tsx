@@ -4,7 +4,7 @@ import { PreviewMessage, ThinkingMessage } from './message';
 import { useEffect, useRef, useState } from 'react';
 
 type DataStreamDelta = {
-  type: 'thinking' | string;
+  type: 'thinking' | 'details' | string;
   content: string;
 };
 
@@ -41,6 +41,14 @@ export function Messages({
     (newDeltas as DataStreamDelta[]).forEach((delta: DataStreamDelta) => {
       if (delta.type === 'thinking') {
         setThinkingMessage(delta.content);
+      } else if (delta.type === 'details') {
+        const event = new CustomEvent('showDetails', {
+          detail: {
+            details: JSON.parse(delta.content),
+            messageId: 'current'
+          }
+        });
+        document.dispatchEvent(event);
       }
     });
   }, [dataStream]);
