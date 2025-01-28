@@ -24,12 +24,14 @@ function extractPrismSections(content: string) {
   // Clean up and ensure proper indentation
   const cleanAssumptions = (text?: string) => {
     if (!text) return undefined;
+
+    // Split by bullet points and clean up each point
     return text
       .split('\n')
-      .map(line => line.trim()) // First trim all lines
-      .filter(line => line.length > 0) // Remove empty lines
-      .join('\n')
-      .trim();
+      .map(line => line.trim())
+      .filter(line => line.startsWith('-'))
+      .map(line => line.substring(1).trim()) // Remove the bullet point
+      .filter(line => line.length > 0);
   };
 
   return {
@@ -207,12 +209,14 @@ export function PureMessageActions({
                   className="py-1 px-2 h-fit text-muted-foreground text-sm"
                   variant="outline"
                   onClick={() => {
-                    document.dispatchEvent(new CustomEvent('showAssumptions', {
-                      detail: {
-                        assumptions: keyAssumptions,
-                        messageId: message.id
-                      }
-                    }));
+                    if (keyAssumptions && keyAssumptions.length > 0) {
+                      document.dispatchEvent(new CustomEvent('showAssumptions', {
+                        detail: {
+                          assumptions: keyAssumptions,
+                          messageId: message.id
+                        }
+                      }));
+                    }
                   }}
                 >
                   View Assumptions

@@ -1,17 +1,180 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from './ui/button';
-import { CrossIcon } from './icons';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { CrossIcon, ChevronDownIcon } from './icons';
+import { Card } from './ui/card';
 import { Markdown } from './markdown';
 import { cn } from '@/lib/utils';
+
+const WORLDVIEW_CONFIG = [
+  {
+    name: 'Survival',
+    bgColor: '#F3384B',
+    textColor: '#000000'
+  },
+  {
+    name: 'Emotional',
+    bgColor: '#FF8C00',
+    textColor: '#000000'
+  },
+  {
+    name: 'Social',
+    bgColor: '#FCE91B',
+    textColor: '#000000'
+  },
+  {
+    name: 'Rational',
+    bgColor: '#37D1AC',
+    textColor: '#000000'
+  },
+  {
+    name: 'Pluralistic',
+    bgColor: '#3765D2',
+    textColor: '#FFFFFF'
+  },
+  {
+    name: 'Narrative-Integrated',
+    bgColor: '#7444C7',
+    textColor: '#FFFFFF'
+  },
+  {
+    name: 'Nondual',
+    bgColor: '#CDCDCD',
+    textColor: '#000000'
+  }
+];
+
+interface SectionProps {
+  title: string;
+  children: React.ReactNode;
+  step: number;
+}
+
+const Section = ({ title, children, step }: SectionProps) => {
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  return (
+    <div className="mb-8">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full flex items-center justify-between group transition-colors hover:bg-primary/5 p-4 rounded-lg"
+      >
+        <div className="flex items-center gap-4">
+          <div className="bg-primary/10 text-primary rounded-full size-10 flex items-center justify-center font-semibold">
+            {step}
+          </div>
+          <h2 className="text-2xl font-semibold text-foreground/90">{title}</h2>
+        </div>
+        <div className={cn(
+          "text-muted-foreground/60 group-hover:text-primary transition-all",
+          isExpanded && "rotate-180"
+        )}>
+          <ChevronDownIcon size={16} />
+        </div>
+      </button>
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="p-6">
+              {children}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+interface PerspectiveCardProps {
+  worldview: typeof WORLDVIEW_CONFIG[0];
+  perspective: string;
+  response: string;
+  index: number;
+}
+
+const PerspectiveCard = ({ worldview, perspective, response, index }: PerspectiveCardProps) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1 }}
+      className="mb-6 last:mb-0"
+    >
+      <div
+        className="rounded-xl backdrop-blur-sm bg-background/30 border border-border/50 overflow-hidden"
+        style={{
+          boxShadow: `0 4px 20px ${worldview.bgColor}15`
+        }}
+      >
+        <div className="p-6">
+          <div
+            className="inline-flex px-4 py-2 rounded-full text-sm font-medium mb-4"
+            style={{
+              backgroundColor: worldview.bgColor,
+              color: worldview.textColor
+            }}
+          >
+            {worldview.name}
+          </div>
+
+          <div className="text-sm text-muted-foreground/80 italic leading-relaxed mb-4">
+            {perspective}
+          </div>
+
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="text-primary hover:text-primary/80 text-sm font-medium transition-colors flex items-center gap-2"
+          >
+            {isExpanded ? 'Show less' : 'Show response'}
+            <div className={cn(
+              "transition-transform",
+              isExpanded && "rotate-180"
+            )}>
+              <ChevronDownIcon size={12} />
+            </div>
+          </button>
+
+          <AnimatePresence>
+            {isExpanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="mt-4 border-t border-border/50 pt-4">
+                  <div className={cn(
+                    "prose prose-sm max-w-none",
+                    "text-foreground/90"
+                  )}>
+                    <Markdown>{response}</Markdown>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
 
 export function DetailsPanel() {
   const [isOpen, setIsOpen] = useState(false);
   const [details, setDetails] = useState<any>(null);
   const [messageId, setMessageId] = useState<string>('');
+  const [activeSection, setActiveSection] = useState(1);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleShowDetails = (e: CustomEvent<{ details: any; messageId: string }>) => {
@@ -20,132 +183,94 @@ export function DetailsPanel() {
       setIsOpen(true);
     };
 
-    document.addEventListener('showDetails', handleShowDetails as EventListener);
-    return () => document.removeEventListener('showDetails', handleShowDetails as EventListener);
-  }, []);
+    const handleClickOutside = (event: MouseEvent) => {
+      if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
 
-  const renderStepLabel = (step: number, label: string) => (
-    <div className="flex items-center gap-2 mb-4 text-2xl">
-      <div className="bg-primary/10 text-primary rounded-full size-7 flex items-center justify-center">
-        {step}
-      </div>
-      <div>{label}</div>
-    </div>
-  );
+    document.addEventListener('showDetails', handleShowDetails as EventListener);
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('showDetails', handleShowDetails as EventListener);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          initial={{ x: '100%' }}
-          animate={{ x: 0 }}
-          exit={{ x: '100%' }}
+          ref={panelRef}
+          initial={{ x: '100%', opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: '100%', opacity: 0 }}
           transition={{ type: 'spring', damping: 20 }}
-          className="fixed top-0 right-0 w-[500px] h-full bg-background border-l z-50 shadow-lg"
+          className="fixed top-0 right-0 w-[600px] h-full bg-gradient-to-b from-background/95 to-background border-l border-border/50 backdrop-blur-xl z-50 shadow-2xl"
         >
           <div className="flex flex-col h-full">
-            <div className="flex justify-between items-center px-6 py-4 border-b bg-muted/40">
-              <h3 className="font-semibold text-lg p-4">Response Details</h3>
+            <div className="flex justify-between items-center px-6 py-4 border-b border-border/50">
+              <div className="flex items-center gap-3">
+                <h3 className="font-semibold text-xl text-foreground/90">Response Details</h3>
+              </div>
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 onClick={() => setIsOpen(false)}
+                className="hover:bg-destructive/10 hover:text-destructive"
               >
-                <CrossIcon />
+                <CrossIcon size={16} />
               </Button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="space-y-10">
-                {/* Perspectives Section */}
-                <Card className="border-none shadow-none bg-muted/40">
-                  <CardHeader className="pb-0">
-                    {renderStepLabel(1, "Gathering perspectives")}
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="divide-y">
-                      {details?.perspectives.map((p: any, i: number) => (
-                        <div key={i} className="space-y-3 py-8 first:pt-0 last:pb-0">
-                          <div className="flex items-center gap-2">
-                            <div className="bg-primary/10 text-primary px-0 py-1 rounded text-sm font-medium">
-                              Worldview {i + 1}
-                            </div>
-                          </div>
-                          <div className="text-sm text-muted-foreground/80 italic leading-relaxed prose prose-sm max-w-none">{p.perspective}</div>
-                          <div className={cn(
-                            "text-sm pl-4 border-l-2 border-primary/20",
-                            "prose prose-sm max-w-none",
-                            "text-foreground/90"
-                          )}>
-                            <Markdown>{p.response}</Markdown>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+            <div className="flex-1 overflow-y-auto">
+              <div className="p-6 space-y-6">
+                <Section title="Gathering perspectives" step={1}>
+                  <div className="space-y-4">
+                    {details?.perspectives.map((p: any, i: number) => (
+                      <PerspectiveCard
+                        key={i}
+                        worldview={WORLDVIEW_CONFIG[i]}
+                        perspective={p.perspective}
+                        response={p.response}
+                        index={i}
+                      />
+                    ))}
+                  </div>
+                </Section>
 
-                {/* First Pass Synthesis */}
-                <Card className="border-none shadow-none bg-muted/40">
-                  <CardHeader className="pb-2">
-                    {renderStepLabel(2, "Initial synthesis")}
-                  </CardHeader>
-                  <CardContent>
-                    <div className={cn(
-                      "text-sm pl-4 border-l-2 border-primary/20",
-                      "prose prose-sm max-w-none",
-                      "text-foreground/90"
-                    )}>
-                      <Markdown>{details?.firstPassSynthesis}</Markdown>
-                    </div>
-                  </CardContent>
-                </Card>
+                <Section title="Initial synthesis" step={2}>
+                  <div className={cn(
+                    "prose prose-sm max-w-none",
+                    "text-foreground/90"
+                  )}>
+                    <Markdown>{details?.firstPassSynthesis}</Markdown>
+                  </div>
+                </Section>
 
-                {/* Evaluations */}
-                <Card className="border-none shadow-none bg-muted/40">
-                  <CardHeader className="pb-2">
-                    {renderStepLabel(3, "Evaluating perspectives")}
-                  </CardHeader>
-                  <CardContent className="pt-2">
-                    <div className="divide-y">
-                      {details?.evaluations.map((e: any, i: number) => (
-                        <div key={i} className="space-y-3 py-8 first:pt-0 last:pb-0">
-                          <div className="flex items-center gap-2">
-                            <div className="bg-primary/10 text-primary px-0 py-1 rounded text-sm font-medium">
-                              Worldview {i + 1}
-                            </div>
-                          </div>
-                          <div className="text-sm text-muted-foreground/80 italic leading-relaxed prose prose-sm max-w-none">{e.perspective}</div>
-                          <div className={cn(
-                            "text-sm pl-4 border-l-2 border-primary/20",
-                            "prose prose-sm max-w-none",
-                            "text-foreground/90"
-                          )}>
-                            <Markdown>{e.response}</Markdown>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+                <Section title="Evaluating perspectives" step={3}>
+                  <div className="space-y-4">
+                    {details?.evaluations.map((e: any, i: number) => (
+                      <PerspectiveCard
+                        key={i}
+                        worldview={WORLDVIEW_CONFIG[i]}
+                        perspective={e.perspective}
+                        response={e.response}
+                        index={i}
+                      />
+                    ))}
+                  </div>
+                </Section>
 
-                {/* Mediation */}
-                <Card className="border-none shadow-none bg-muted/40">
-                  <CardHeader className="pb-2">
-                    {renderStepLabel(4, "Mediating conflicts")}
-                  </CardHeader>
-                  <CardContent>
-                    <div className={cn(
-                      "text-sm pl-4 border-l-2 border-primary/20",
-                      "prose prose-sm max-w-none",
-                      "text-foreground/90"
-                    )}>
-                      <Markdown>{details?.mediation}</Markdown>
-                    </div>
-                  </CardContent>
-                </Card>
-
-
+                <Section title="Mediating conflicts" step={4}>
+                  <div className={cn(
+                    "prose prose-sm max-w-none",
+                    "text-foreground/90"
+                  )}>
+                    <Markdown>{details?.mediation}</Markdown>
+                  </div>
+                </Section>
               </div>
             </div>
           </div>

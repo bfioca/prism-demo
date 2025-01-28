@@ -299,47 +299,62 @@ export const ThinkingMessage = ({ message = '' }: { message?: string }) => {
 
   if (!message.trim()) return null;
 
-  const words = message.split(' ');
+  // Split into characters but preserve spaces by replacing them with a special character
+  const characters = message.split('').map((char, i) => ({
+    char,
+    isSpace: char === ' ',
+    id: `${char}-${i}`
+  }));
 
   return (
     <motion.div
       className="w-full mx-auto max-w-3xl px-4 group/message"
       initial={{ y: 5, opacity: 0 }}
-      animate={{ y: 0, opacity: 1, transition: { delay: 1 } }}
+      animate={{ y: 0, opacity: 1, transition: { delay: 0.2 } }}
       data-role={role}
     >
-      <div
-        className={cx(
-          'flex gap-4 group-data-[role=user]/message:px-3 w-full group-data-[role=user]/message:w-fit group-data-[role=user]/message:ml-auto group-data-[role=user]/message:max-w-2xl group-data-[role=user]/message:py-2 rounded-xl',
-          {
-            'group-data-[role=user]/message:bg-muted': true,
-          },
-        )}
-      >
-        <div className="size-8 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border">
-          <SparklesIcon size={14} />
+      <div className="flex gap-4 w-full">
+        <div className="size-8 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border bg-background">
+          <motion.div
+            className="translate-y-px"
+            animate={{
+              scale: [1, 1.4, 1],
+              opacity: [0.5, 0.8, 0.5]
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          >
+            <SparklesIcon size={14} />
+          </motion.div>
         </div>
 
         <div className="flex flex-col gap-2 w-full justify-center min-h-[32px]">
-          <div className="flex flex-col gap-4 text-muted-foreground">
-            <div className="flex gap-1">
-              {words.map((word, i) => (
-                <motion.span
-                  key={i}
-                  animate={{
-                    opacity: [0.7, 1, 0.7],
-                  }}
-                  transition={{
-                    duration: 1.5,
-                    repeat: Infinity,
-                    delay: i * 0.15,
-                    ease: "easeInOut"
-                  }}
-                >
-                  {word}
-                </motion.span>
-              ))}
-            </div>
+          <div className="flex flex-wrap text-foreground/90">
+            {characters.map(({ char, isSpace, id }, i) => (
+              <motion.span
+                key={id}
+                initial={{ opacity: 0 }}
+                animate={{
+                  opacity: isSpace ? 1 : [0.5, 0.8, 0.5]
+                }}
+                transition={{
+                  duration: 1.5,
+                  repeat: isSpace ? 0 : Infinity,
+                  delay: i * 0.02,
+                  ease: "easeInOut"
+                }}
+                className={cn(
+                  "relative",
+                  isSpace && "mr-[0.25em]",
+                  !isSpace && "font-medium"
+                )}
+              >
+                {isSpace ? '\u00A0' : char}
+              </motion.span>
+            ))}
           </div>
         </div>
       </div>
