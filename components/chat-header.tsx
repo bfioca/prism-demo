@@ -57,7 +57,7 @@ function PureChatHeader({
         </Tooltip>
       )}
 
-      {!isReadonly && (
+      {!isReadonly && false && (
         <ModeSelector
           selectedMode={selectedMode}
           onModeChange={onModeChange}

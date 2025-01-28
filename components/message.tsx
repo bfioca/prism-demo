@@ -348,7 +348,7 @@ export const ThinkingMessage = ({ message = '' }: { message?: string }) => {
                 }}
                 className={cn(
                   "relative",
-                  isSpace && "mr-[0.25em]",
+                  isSpace && "mr-[0.15em]",
                   !isSpace && "font-medium"
                 )}
               >

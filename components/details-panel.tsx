@@ -7,6 +7,7 @@ import { CrossIcon, ChevronDownIcon } from './icons';
 import { Card } from './ui/card';
 import { Markdown } from './markdown';
 import { cn } from '@/lib/utils';
+import { usePanel } from './panel-context';
 
 const WORLDVIEW_CONFIG = [
   {
@@ -113,18 +114,18 @@ const PerspectiveCard = ({ worldview, perspective, response, index }: Perspectiv
       <div
         className="rounded-xl backdrop-blur-sm bg-background/30 border border-border/50 overflow-hidden"
         style={{
-          boxShadow: `0 4px 20px ${worldview.bgColor}15`
+          boxShadow: `0 6px 25px ${worldview.bgColor}25`
         }}
       >
         <div className="p-6">
           <div
-            className="inline-flex px-4 py-2 rounded-full text-sm font-medium mb-4"
+            className="inline-flex px-4 py-2 rounded-md text-sm font-medium mb-4"
             style={{
               backgroundColor: worldview.bgColor,
               color: worldview.textColor
             }}
           >
-            {worldview.name}
+            {worldview.name} Worldview
           </div>
 
           <div className="text-sm text-muted-foreground/80 italic leading-relaxed mb-4">
@@ -170,33 +171,46 @@ const PerspectiveCard = ({ worldview, perspective, response, index }: Perspectiv
 };
 
 export function DetailsPanel() {
-  const [isOpen, setIsOpen] = useState(false);
   const [details, setDetails] = useState<any>(null);
   const [messageId, setMessageId] = useState<string>('');
-  const [activeSection, setActiveSection] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+  const { activePanel, setActivePanel } = usePanel();
+
+  const isOpen = activePanel === 'details';
+
+  const fetchMessageDetails = async (messageId: string) => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/message?messageId=${messageId}`);
+      if (!response.ok) return;
+      const data = await response.json();
+      setDetails(data.prism_data || {});
+    } catch (error) {
+      console.error('Error fetching message details:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     const handleShowDetails = (e: CustomEvent<{ details: any; messageId: string }>) => {
-      setDetails(e.detail.details || {});
       setMessageId(e.detail.messageId);
-      setIsOpen(true);
-    };
+      setActivePanel('details');
 
-    const handleClickOutside = (event: MouseEvent) => {
-      if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
+      if (e.detail.details && Object.keys(e.detail.details).length > 0) {
+        setDetails(e.detail.details);
+      } else if (e.detail.messageId && !details) {
+        fetchMessageDetails(e.detail.messageId);
       }
     };
 
     document.addEventListener('showDetails', handleShowDetails as EventListener);
-    document.addEventListener('mousedown', handleClickOutside);
 
     return () => {
       document.removeEventListener('showDetails', handleShowDetails as EventListener);
-      document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, []);
+  }, [setActivePanel]);
 
   const hasSection = (sectionName: keyof typeof details) => {
     return details && details[sectionName] && details[sectionName].length > 0;
@@ -205,106 +219,106 @@ export function DetailsPanel() {
   const hasSynthesis = () => details && details.firstPassSynthesis;
   const hasMediation = () => details && details.mediation;
 
+  const hasNoContent = !hasSection('perspectives') && !hasSynthesis() && !hasSection('evaluations') && !hasMediation();
+
   return (
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          ref={panelRef}
-          initial={{ x: '100%', opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          exit={{ x: '100%', opacity: 0 }}
-          transition={{ type: 'spring', damping: 20 }}
-          className="fixed top-0 right-0 w-[600px] h-full bg-gradient-to-b from-background/95 to-background border-l border-border/50 backdrop-blur-xl z-50 shadow-2xl"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+          className="flex-none overflow-hidden h-full"
         >
           <div className="flex flex-col h-full">
-            <div className="flex justify-between items-center px-6 py-4 border-b border-border/50">
-              <div className="flex items-center gap-3">
-                <h3 className="font-semibold text-xl text-foreground/90">Response Details</h3>
-              </div>
+            <div className="flex-none flex justify-between items-center px-6 py-4 border-b border-border/50 bg-background/50">
+              <h3 className="font-semibold text-xl text-foreground/90">Details</h3>
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setIsOpen(false)}
+                onClick={() => setActivePanel(null)}
                 className="hover:bg-destructive/10 hover:text-destructive"
               >
                 <CrossIcon size={16} />
               </Button>
             </div>
+            <div className="flex-1 overflow-hidden">
+              <div className="h-full overflow-y-auto">
+                <div className="p-6 space-y-6">
+                  {hasNoContent ? (
+                    <div className="flex items-center justify-center h-32 text-muted-foreground">
+                      <motion.div
+                        animate={{
+                          opacity: [0.5, 1, 0.5],
+                        }}
+                        transition={{
+                          duration: 1.5,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                      >
+                        {isLoading ? 'Loading details...' : 'No details available'}
+                      </motion.div>
+                    </div>
+                  ) : (
+                    <>
+                      {hasSection('perspectives') && (
+                        <Section title="Gathering perspectives" step={1}>
+                          <div className="space-y-4">
+                            {details?.perspectives.map((p: any, i: number) => (
+                              <PerspectiveCard
+                                key={i}
+                                worldview={WORLDVIEW_CONFIG[i]}
+                                perspective={p.perspective}
+                                response={p.response}
+                                index={i}
+                              />
+                            ))}
+                          </div>
+                        </Section>
+                      )}
 
-            <div className="flex-1 overflow-y-auto">
-              <div className="p-6 space-y-6">
-                {!hasSection('perspectives') && !hasSynthesis() && !hasSection('evaluations') && !hasMediation() ? (
-                  <div className="flex items-center justify-center h-32 text-muted-foreground">
-                    <motion.div
-                      animate={{
-                        opacity: [0.5, 1, 0.5],
-                      }}
-                      transition={{
-                        duration: 1.5,
-                        repeat: Infinity,
-                        ease: "easeInOut"
-                      }}
-                    >
-                      Loading details...
-                    </motion.div>
-                  </div>
-                ) : (
-                  <>
-                    {hasSection('perspectives') && (
-                      <Section title="Gathering perspectives" step={1}>
-                        <div className="space-y-4">
-                          {details?.perspectives.map((p: any, i: number) => (
-                            <PerspectiveCard
-                              key={i}
-                              worldview={WORLDVIEW_CONFIG[i]}
-                              perspective={p.perspective}
-                              response={p.response}
-                              index={i}
-                            />
-                          ))}
-                        </div>
-                      </Section>
-                    )}
+                      {hasSynthesis() && (
+                        <Section title="Initial synthesis" step={2}>
+                          <div className={cn(
+                            "prose prose-sm max-w-none",
+                            "text-foreground/90"
+                          )}>
+                            <Markdown>{details?.firstPassSynthesis}</Markdown>
+                          </div>
+                        </Section>
+                      )}
 
-                    {hasSynthesis() && (
-                      <Section title="Initial synthesis" step={2}>
-                        <div className={cn(
-                          "prose prose-sm max-w-none",
-                          "text-foreground/90"
-                        )}>
-                          <Markdown>{details?.firstPassSynthesis}</Markdown>
-                        </div>
-                      </Section>
-                    )}
+                      {hasSection('evaluations') && (
+                        <Section title="Evaluating perspectives" step={3}>
+                          <div className="space-y-4">
+                            {details?.evaluations.map((e: any, i: number) => (
+                              <PerspectiveCard
+                                key={i}
+                                worldview={WORLDVIEW_CONFIG[i]}
+                                perspective={e.perspective}
+                                response={e.response}
+                                index={i}
+                              />
+                            ))}
+                          </div>
+                        </Section>
+                      )}
 
-                    {hasSection('evaluations') && (
-                      <Section title="Evaluating perspectives" step={3}>
-                        <div className="space-y-4">
-                          {details?.evaluations.map((e: any, i: number) => (
-                            <PerspectiveCard
-                              key={i}
-                              worldview={WORLDVIEW_CONFIG[i]}
-                              perspective={e.perspective}
-                              response={e.response}
-                              index={i}
-                            />
-                          ))}
-                        </div>
-                      </Section>
-                    )}
-
-                    {hasMediation() && (
-                      <Section title="Mediating conflicts" step={4}>
-                        <div className={cn(
-                          "prose prose-sm max-w-none",
-                          "text-foreground/90"
-                        )}>
-                          <Markdown>{details?.mediation}</Markdown>
-                        </div>
-                      </Section>
-                    )}
-                  </>
-                )}
+                      {hasMediation() && (
+                        <Section title="Mediating conflicts" step={4}>
+                          <div className={cn(
+                            "prose prose-sm max-w-none",
+                            "text-foreground/90"
+                          )}>
+                            <Markdown>{details?.mediation}</Markdown>
+                          </div>
+                        </Section>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>

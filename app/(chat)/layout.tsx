@@ -4,6 +4,8 @@ import { AppSidebar } from '@/components/app-sidebar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { AssumptionsPanel } from '@/components/assumptions-panel';
 import { DetailsPanel } from '@/components/details-panel';
+import { PanelProvider } from '@/components/panel-context';
+import { RightPanel } from '@/components/right-panel';
 
 import { auth } from '../(auth)/auth';
 import Script from 'next/script';
@@ -25,14 +27,26 @@ export default async function Layout({
         strategy="beforeInteractive"
       />
       <SidebarProvider defaultOpen={!isCollapsed}>
-        <AppSidebar user={session?.user} />
-        <SidebarInset>
-          <div className="relative h-full">
-            {children}
-            <AssumptionsPanel />
-            <DetailsPanel />
+        <PanelProvider>
+          <div className="flex size-full">
+            <AppSidebar user={session?.user} />
+            <div className="flex-1 min-w-0">
+              <SidebarInset>
+                <div className="flex h-full">
+                  <div className="flex-1 min-w-0">
+                    {children}
+                  </div>
+                  <RightPanel>
+                    <div className="absolute inset-y-0 flex flex-col">
+                      <AssumptionsPanel />
+                      <DetailsPanel />
+                    </div>
+                  </RightPanel>
+                </div>
+              </SidebarInset>
+            </div>
           </div>
-        </SidebarInset>
+        </PanelProvider>
       </SidebarProvider>
     </>
   );
