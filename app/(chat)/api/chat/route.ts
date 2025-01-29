@@ -7,6 +7,7 @@ import {
   streamText,
 } from 'ai';
 import { z } from 'zod';
+import { headers } from 'next/headers';
 
 import { auth } from '@/app/(auth)/auth';
 import { customModel } from '@/lib/ai';
@@ -32,6 +33,7 @@ import {
   getMostRecentUserMessage,
   sanitizeResponseMessages,
 } from '@/lib/utils';
+import { checkRateLimit } from '@/lib/redis';
 
 import { generateTitleFromUserMessage } from '../../actions';
 import { perspectivePrompts } from './prompts/perspective';
@@ -71,6 +73,31 @@ export async function POST(request: Request) {
 
   if (!session || !session.user || !session.user.id) {
     return new Response('Unauthorized', { status: 401 });
+  }
+
+  // Get IP address from headers
+  const headersList = headers();
+  const forwardedFor = request.headers.get('x-forwarded-for');
+  const ip = forwardedFor ? forwardedFor.split(',')[0] : '127.0.0.1';
+
+  // Check rate limit
+  const rateLimitResult = await checkRateLimit(session.user.id, ip);
+
+  // Add rate limit headers
+  const rateLimitHeaders = {
+    'X-RateLimit-Limit': '100',
+    'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+    'X-RateLimit-Reset': rateLimitResult.reset.toString(),
+  };
+
+  if (!rateLimitResult.isAllowed) {
+    return new Response('Rate limit exceeded. Please try again later.', {
+      status: 429,
+      headers: {
+        ...rateLimitHeaders,
+        'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
+      },
+    });
   }
 
   const model = models.find((model) => model.id === modelId);
