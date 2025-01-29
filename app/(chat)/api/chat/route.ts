@@ -2,6 +2,7 @@ import {
   convertToCoreMessages,
   createDataStreamResponse,
   generateText,
+  smoothStream,
   streamObject,
   streamText,
 } from 'ai';
@@ -92,18 +93,9 @@ export async function POST(request: Request) {
     await saveChat({ id, userId: session.user.id, title });
   }
 
-  const userMessageId = generateUUID();
-
-  await saveMessages({
-    messages: [
-      { ...userMessage, id: userMessageId, createdAt: new Date(), chatId: id },
-    ],
-  });
-
   if (mode === 'prism') {
     return createDataStreamResponse({
       execute: async (dataStream) => {
-        // Create a structure to hold all intermediary responses
         const intermediaryData = {
           baselineResponse: '',
           perspectives: [] as { perspective: string; response: string }[],
@@ -113,13 +105,10 @@ export async function POST(request: Request) {
         };
 
         dataStream.writeData({
-          type: 'user-message-id',
-          content: userMessageId,
+          type: 'thinking',
+          content: '(1/5) Getting responses from each perspective...',
         });
 
-        dataStream.writeData({ type: 'thinking', content: '(1/5) Getting responses from each perspective...' });
-
-        // 1. Get responses from each perspective
         const perspectiveResponses = await Promise.all(perspectivePrompts.map(async (prompt, index) => {
           console.info('Generating text for perspective...');
           const { text } = await generateText({
@@ -128,12 +117,10 @@ export async function POST(request: Request) {
             temperature: 0.2,
           });
           console.info('Generated text for perspective:', text);
-          // Store in intermediary data and stream immediately
           intermediaryData.perspectives.push({
             perspective: WORLDVIEWS[index],
             response: text
           });
-          // Stream the updated details after each perspective
           dataStream.writeData({
             type: 'details',
             content: JSON.stringify(intermediaryData)
@@ -143,7 +130,6 @@ export async function POST(request: Request) {
 
         console.info('All perspectives responses:', perspectiveResponses);
 
-        // 2. Synthesize the responses and generate a baseline response
         const parallelModes = ['baseline', 'synthesis'];
         const [baselineResponse, firstPassResponse] = await Promise.all(
           parallelModes.map(async (mode) => {
@@ -155,7 +141,7 @@ export async function POST(request: Request) {
               });
               return text;
             } else {
-              dataStream.writeData({ type: 'thinking', content: `(2/5) Synthesizing the responses...` });
+              dataStream.writeData({ type: 'thinking', content: '(2/5) Synthesizing the responses...' });
               const { text } = await generateText({
                 model: customModel(model.apiIdentifier),
                 messages: [
@@ -175,10 +161,7 @@ export async function POST(request: Request) {
           })
         );
 
-        // store baseline response
         intermediaryData.baselineResponse = baselineResponse;
-
-        // Store first pass synthesis and stream update
         intermediaryData.firstPassSynthesis = firstPassResponse;
         dataStream.writeData({
           type: 'details',
@@ -186,9 +169,8 @@ export async function POST(request: Request) {
         });
 
         console.info('Synthesized text:', firstPassResponse);
-        dataStream.writeData({ type: 'thinking', content:  '(3/5) Evaluating the first pass response...' });
+        dataStream.writeData({ type: 'thinking', content: '(3/5) Evaluating the first pass response...' });
 
-        // 3. Evaluate first pass response
         const evaluationResponses = await Promise.all(conflictPromptMaps.map(async (promptMap) => {
           console.info('Generating text for evaluation pass...');
           const { text } = await generateText({
@@ -197,12 +179,10 @@ export async function POST(request: Request) {
             temperature: 0.2,
           });
           console.info('Generated text for evaluation:', text);
-          // Store in intermediary data and stream immediately
           intermediaryData.evaluations.push({
             perspective: promptMap.perspective,
             response: text
           });
-          // Stream the updated details after each evaluation
           dataStream.writeData({
             type: 'details',
             content: JSON.stringify(intermediaryData)
@@ -210,9 +190,8 @@ export async function POST(request: Request) {
           return { text, perspective: promptMap.perspective };
         }));
 
-        // 4. Mediate the responses
         console.info('Evaluation responses:', evaluationResponses);
-        dataStream.writeData({ type: 'thinking', content:  '(4/5) Mediating the responses...' });
+        dataStream.writeData({ type: 'thinking', content: '(4/5) Mediating the responses...' });
 
         const mediationPrompt = multiPerspectiveMediationPrompt(
           messages[messages.length - 1].content as string,
@@ -228,7 +207,6 @@ export async function POST(request: Request) {
           temperature: 0.2,
         });
 
-        // Store mediation result and stream update
         intermediaryData.mediation = mediationResult.text;
         dataStream.writeData({
           type: 'details',
@@ -238,8 +216,7 @@ export async function POST(request: Request) {
         console.info('Mediation result:', mediationResult.text);
         console.info('Complete intermediary data:', intermediaryData);
 
-        // 5. Synthesize final response
-        dataStream.writeData({ type: 'thinking', content:  '(5/5) Synthesizing final response...' });
+        dataStream.writeData({ type: 'thinking', content: '(5/5) Synthesizing final response...' });
 
         const finalPrompt = finalSynthesisPrompt(
           messages[messages.length - 1].content as string,
@@ -249,57 +226,63 @@ export async function POST(request: Request) {
         );
         console.info('Final synthesis prompt:', finalPrompt);
 
-        const messageId = generateUUID();
-        const finalResult = streamText({
+        const result = streamText({
           model: customModel(model.apiIdentifier),
           messages: [{ role: 'system', content: finalPrompt }, ...messages],
           temperature: 0.2,
+          experimental_generateMessageId: generateUUID,
+          experimental_transform: smoothStream({ chunking: 'word' }),
+          onChunk: (chunk) => {
+            dataStream.writeData({ type: 'thinking', content: null });
+          },
+          onFinish: async ({ response }) => {
+            if (session.user?.id) {
+              try {
+                console.log('Response messages:', response.messages);
+
+                // Since we only get one assistant message back
+                const assistantMessage = response.messages[0];
+
+                await saveMessages({
+                  messages: [
+                    {
+                      ...userMessage,
+                      id: generateUUID(), // Generate a new ID for user message
+                      chatId: id,
+                      createdAt: new Date(),
+                    },
+                    {
+                      id: assistantMessage.id,
+                      chatId: id,
+                      role: 'assistant',
+                      content: assistantMessage.content,
+                      createdAt: new Date(),
+                      prism_data: intermediaryData
+                    }
+                  ],
+                });
+              } catch (error) {
+                console.error('Failed to save chat - Error:', error);
+                console.error('Error details:', {
+                  name: (error as Error).name,
+                  message: (error as Error).message,
+                  stack: (error as Error).stack
+                });
+              }
+            }
+          },
           experimental_telemetry: {
             isEnabled: true,
             functionId: 'stream-text',
           },
-          onChunk: (chunk) => {
-            dataStream.writeData({ type: 'thinking', content: '' });
-          },
-          onFinish: async (response) => {
-            if (session.user?.id) {
-              try {
-                await saveMessages({
-                  messages: [{
-                    id: messageId,
-                    chatId: id,
-                    role: 'assistant',
-                    content: response.text,
-                    createdAt: new Date(),
-                    prism_data: intermediaryData
-                  }],
-                });
-                dataStream.writeMessageAnnotation({
-                  messageIdFromServer: messageId,
-                });
-              } catch (error) {
-                console.error('Failed to save chat');
-              }
-            }
-          }
         });
 
-        // Write the message ID early so it's available during streaming
-        dataStream.writeMessageAnnotation({
-          messageIdFromServer: messageId,
-        });
-
-        finalResult.mergeIntoDataStream(dataStream);
+        result.mergeIntoDataStream(dataStream);
       },
     });
   } else {
     return createDataStreamResponse({
       execute: (dataStream) => {
-        dataStream.writeData({
-          type: 'user-message-id',
-          content: userMessageId,
-        });
-
         const result = streamText({
           model: customModel(model.apiIdentifier),
           system: systemPrompt,
