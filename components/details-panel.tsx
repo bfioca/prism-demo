@@ -199,23 +199,28 @@ export function DetailsPanel() {
 
   useEffect(() => {
     const handleShowDetails = (e: CustomEvent<{ details: any; messageId: string; isStreaming?: boolean }>) => {
-      setMessageId(e.detail.messageId);
+      const newMessageId = e.detail.messageId;
 
-      // Always set details for streaming messages
+      // If clicking the same message's button while panel is open, close it
+      if (newMessageId === messageId && activePanel === 'details') {
+        setActivePanel(null);
+        return;
+      }
+
+      // Otherwise proceed with showing details
+      setMessageId(newMessageId);
+
       if (e.detail.isStreaming) {
         setDetails(e.detail.details);
         setActivePanel('details');
         return;
       }
 
-      // For historical messages, fetch if needed
-      if (e.detail.messageId !== messageId) {
-        setActivePanel('details');
-        if (e.detail.details && Object.keys(e.detail.details).length > 0) {
-          setDetails(e.detail.details);
-        } else {
-          fetchMessageDetails(e.detail.messageId);
-        }
+      setActivePanel('details');
+      if (e.detail.details && Object.keys(e.detail.details).length > 0) {
+        setDetails(e.detail.details);
+      } else {
+        fetchMessageDetails(newMessageId);
       }
     };
 
@@ -223,7 +228,7 @@ export function DetailsPanel() {
     return () => {
       document.removeEventListener('showDetails', handleShowDetails as EventListener);
     };
-  }, [setActivePanel, messageId]);
+  }, [setActivePanel, messageId, activePanel]);
 
   const hasSection = (sectionName: keyof typeof details) => {
     return details && details[sectionName] && details[sectionName].length > 0;

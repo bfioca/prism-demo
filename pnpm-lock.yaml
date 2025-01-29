@@ -5,6 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
+  '@ai-sdk/groq':
+    specifier: ^1.1.6
+    version: 1.1.6(zod@3.24.1)
   '@ai-sdk/openai':
     specifier: 1.0.19
     version: 1.0.19(zod@3.24.1)
@@ -240,6 +243,17 @@ devDependencies:
     version: 5.7.3
 
 packages:
+
+  /@ai-sdk/groq@1.1.6(zod@3.24.1):
+    resolution: {integrity: sha512-mijMsf9St0f0GoXc+/KWTnHiGI6Ufqex+IbkJB/1Se3QNN/COtoc+Vt8EqHxlyI9LPgvxkl1t42TEyYlTCjGuw==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.0.0
+    dependencies:
+      '@ai-sdk/provider': 1.0.6
+      '@ai-sdk/provider-utils': 2.1.5(zod@3.24.1)
+      zod: 3.24.1
+    dev: false
 
   /@ai-sdk/openai@1.0.19(zod@3.24.1):
     resolution: {integrity: sha512-7qmLgppWpGUhSgrH0a6CtgD9hZeRh2hARppl1B7fNhVbekYftSMucsdCiVlKbQzSKPxox0vkNMmwjKa/7xf8bQ==}
