@@ -21,6 +21,12 @@ export const models: Array<Model> = [
     apiIdentifier: 'gpt-4o',
     description: 'For complex, multi-step tasks',
   },
+  {
+    id: 'deepseek-r1-distill-llama-70b',
+    label: 'DeepSeek R1',
+    apiIdentifier: 'deepseek-r1-distill-llama-70b',
+    description: 'For fast reasoning',
+  },
   // {
   //   id: 'o1-mini',
   //   label: 'o1 mini',

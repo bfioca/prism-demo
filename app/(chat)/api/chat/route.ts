@@ -95,6 +95,10 @@ export async function POST(request: Request) {
 
   if (mode === 'prism') {
     return createDataStreamResponse({
+      onError: (error) => {
+        console.error('Error:', error);
+        return 'Error ' + error;
+      },
       execute: async (dataStream) => {
         const intermediaryData = {
           baselineResponse: '',
@@ -104,62 +108,121 @@ export async function POST(request: Request) {
           mediation: '',
         };
 
+        // Helper function for delay
+        const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
         dataStream.writeData({
           type: 'thinking',
           content: '(1/5) Getting responses from each perspective...',
         });
 
-        const perspectiveResponses = await Promise.all(perspectivePrompts.map(async (prompt, index) => {
-          console.info('Generating text for perspective...');
-          const { text } = await generateText({
-            model: customModel(model.apiIdentifier),
-            messages: [{ role: 'system', content: prompt }, ...messages],
-            temperature: 0.2,
-          });
-          console.info('Generated text for perspective:', text);
-          intermediaryData.perspectives.push({
-            perspective: WORLDVIEWS[index],
-            response: text
-          });
-          dataStream.writeData({
-            type: 'details',
-            content: JSON.stringify(intermediaryData)
-          });
-          return text;
-        }));
+        let perspectiveResponses: string[];
+        if (model.apiIdentifier.includes('deepseek')) {
+          // Sequential execution for DeepSeek models
+          perspectiveResponses = [];
+          for (let i = 0; i < perspectivePrompts.length; i++) {
+            if (i > 0) await delay(5000); // 5 second delay between iterations
+            console.info('Generating text for perspective...');
+            const { text } = await generateText({
+              model: customModel(model.apiIdentifier),
+              messages: [{ role: 'system', content: perspectivePrompts[i] }, ...messages],
+              temperature: 0.2,
+            });
+            console.info('Generated text for perspective:', text);
+            intermediaryData.perspectives.push({
+              perspective: WORLDVIEWS[i],
+              response: text
+            });
+            dataStream.writeData({
+              type: 'details',
+              content: JSON.stringify(intermediaryData)
+            });
+            perspectiveResponses.push(text);
+          }
+        } else {
+          // Parallel execution for other models
+          perspectiveResponses = await Promise.all(perspectivePrompts.map(async (prompt, index) => {
+            console.info('Generating text for perspective...');
+            const { text } = await generateText({
+              model: customModel(model.apiIdentifier),
+              messages: [{ role: 'system', content: prompt }, ...messages],
+              temperature: 0.2,
+            });
+            console.info('Generated text for perspective:', text);
+            intermediaryData.perspectives.push({
+              perspective: WORLDVIEWS[index],
+              response: text
+            });
+            dataStream.writeData({
+              type: 'details',
+              content: JSON.stringify(intermediaryData)
+            });
+            return text;
+          }));
+        }
 
         console.info('All perspectives responses:', perspectiveResponses);
 
         const parallelModes = ['baseline', 'synthesis'];
-        const [baselineResponse, firstPassResponse] = await Promise.all(
-          parallelModes.map(async (mode) => {
-            if (mode === 'baseline') {
-              const { text } = await generateText({
-                model: customModel(model.apiIdentifier),
-                messages: messages,
-                temperature: 0.2,
-              });
-              return text;
-            } else {
-              dataStream.writeData({ type: 'thinking', content: '(2/5) Synthesizing the responses...' });
-              const { text } = await generateText({
-                model: customModel(model.apiIdentifier),
-                messages: [
-                  {
-                    role: 'system',
-                    content: multiPerspectiveSynthesisPrompt(
-                      messages[messages.length - 1].content as string,
-                      perspectiveResponses
-                    )
-                  },
-                  ...messages
-                ],
-                temperature: 0.2,
-              });
-              return text;
-            }
-          })
-        );
+        let baselineResponse: string, firstPassResponse: string;
+
+        if (model.apiIdentifier.includes('deepseek')) {
+          // Sequential execution for DeepSeek models
+          baselineResponse = await generateText({
+            model: customModel(model.apiIdentifier),
+            messages: messages,
+            temperature: 0.2,
+          }).then(res => res.text);
+
+          await delay(5000); // 5 second delay between calls
+
+          dataStream.writeData({ type: 'thinking', content: '(2/5) Synthesizing the responses...' });
+          firstPassResponse = await generateText({
+            model: customModel(model.apiIdentifier),
+            messages: [
+              {
+                role: 'system',
+                content: multiPerspectiveSynthesisPrompt(
+                  messages[messages.length - 1].content as string,
+                  perspectiveResponses
+                )
+              },
+              ...messages
+            ],
+            temperature: 0.2,
+          }).then(res => res.text);
+        } else {
+          // Parallel execution for other models
+          [baselineResponse, firstPassResponse] = await Promise.all(
+            parallelModes.map(async (mode) => {
+              if (mode === 'baseline') {
+                const { text } = await generateText({
+                  model: customModel(model.apiIdentifier),
+                  messages: messages,
+                  temperature: 0.2,
+                });
+                return text;
+              } else {
+                dataStream.writeData({ type: 'thinking', content: '(2/5) Synthesizing the responses...' });
+                const { text } = await generateText({
+                  model: customModel(model.apiIdentifier),
+                  messages: [
+                    {
+                      role: 'system',
+                      content: multiPerspectiveSynthesisPrompt(
+                        messages[messages.length - 1].content as string,
+                        perspectiveResponses
+                      )
+                    },
+                    ...messages
+                  ],
+                  temperature: 0.2,
+                });
+                return text;
+              }
+            })
+          );
+        }
 
         intermediaryData.baselineResponse = baselineResponse;
         intermediaryData.firstPassSynthesis = firstPassResponse;
@@ -171,27 +234,57 @@ export async function POST(request: Request) {
         console.info('Synthesized text:', firstPassResponse);
         dataStream.writeData({ type: 'thinking', content: '(3/5) Evaluating the first pass response...' });
 
-        const evaluationResponses = await Promise.all(conflictPromptMaps.map(async (promptMap) => {
-          console.info('Generating text for evaluation pass...');
-          const { text } = await generateText({
-            model: customModel(model.apiIdentifier),
-            messages: [{ role: 'system', content: promptMap.prompt }, ...messages],
-            temperature: 0.2,
-          });
-          console.info('Generated text for evaluation:', text);
-          intermediaryData.evaluations.push({
-            perspective: promptMap.perspective,
-            response: text
-          });
-          dataStream.writeData({
-            type: 'details',
-            content: JSON.stringify(intermediaryData)
-          });
-          return { text, perspective: promptMap.perspective };
-        }));
+        let evaluationResponses;
+        if (model.apiIdentifier.includes('deepseek')) {
+          // Sequential execution for DeepSeek models
+          evaluationResponses = [];
+          for (const promptMap of conflictPromptMaps) {
+            if (evaluationResponses.length > 0) await delay(5000); // 5 second delay between iterations
+            console.info('Generating text for evaluation pass...');
+            const { text } = await generateText({
+              model: customModel(model.apiIdentifier),
+              messages: [{ role: 'system', content: promptMap.prompt }, ...messages],
+              temperature: 0.2,
+            });
+            console.info('Generated text for evaluation:', text);
+            intermediaryData.evaluations.push({
+              perspective: promptMap.perspective,
+              response: text
+            });
+            dataStream.writeData({
+              type: 'details',
+              content: JSON.stringify(intermediaryData)
+            });
+            evaluationResponses.push({ text, perspective: promptMap.perspective });
+          }
+        } else {
+          // Parallel execution for other models
+          evaluationResponses = await Promise.all(conflictPromptMaps.map(async (promptMap) => {
+            console.info('Generating text for evaluation pass...');
+            const { text } = await generateText({
+              model: customModel(model.apiIdentifier),
+              messages: [{ role: 'system', content: promptMap.prompt }, ...messages],
+              temperature: 0.2,
+            });
+            console.info('Generated text for evaluation:', text);
+            intermediaryData.evaluations.push({
+              perspective: promptMap.perspective,
+              response: text
+            });
+            dataStream.writeData({
+              type: 'details',
+              content: JSON.stringify(intermediaryData)
+            });
+            return { text, perspective: promptMap.perspective };
+          }));
+        }
 
         console.info('Evaluation responses:', evaluationResponses);
         dataStream.writeData({ type: 'thinking', content: '(4/5) Mediating the responses...' });
+
+        if (model.apiIdentifier.includes('deepseek')) {
+          await delay(15000); // 5 second delay between calls
+        }
 
         const mediationPrompt = multiPerspectiveMediationPrompt(
           messages[messages.length - 1].content as string,
@@ -225,6 +318,10 @@ export async function POST(request: Request) {
           mediationResult.text
         );
         console.info('Final synthesis prompt:', finalPrompt);
+
+        if (model.apiIdentifier.includes('deepseek')) {
+          await delay(15000); // 5 second delay between calls
+        }
 
         const result = streamText({
           model: customModel(model.apiIdentifier),
