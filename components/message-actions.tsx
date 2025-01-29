@@ -254,30 +254,10 @@ export function PureMessageActions({
                     }
                   }}
                 >
-                  View Assumptions
+                  Key Assumptions
                 </Button>
               </TooltipTrigger>
               <TooltipContent>View Key Assumptions</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  className="py-1 px-2 h-fit text-muted-foreground text-sm"
-                  variant="outline"
-                  onClick={() => {
-                    document.dispatchEvent(new CustomEvent('showDetails', {
-                      detail: {
-                        details: message.prism_data || {},
-                        messageId: message.id
-                      }
-                    }));
-                  }}
-                >
-                  View Details
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>View Response Details</TooltipContent>
             </Tooltip>
 
             <Tooltip>
@@ -306,7 +286,27 @@ export function PureMessageActions({
                   View Baseline
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>View Baseline Response</TooltipContent>
+              <TooltipContent>Baseline Comparison</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  className="py-1 px-2 h-fit text-muted-foreground text-sm"
+                  variant="outline"
+                  onClick={() => {
+                    document.dispatchEvent(new CustomEvent('showDetails', {
+                      detail: {
+                        details: message.prism_data || {},
+                        messageId: message.id
+                      }
+                    }));
+                  }}
+                >
+                  View Details
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Full Details</TooltipContent>
             </Tooltip>
           </>
         )}
