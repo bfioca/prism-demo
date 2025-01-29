@@ -286,7 +286,7 @@ export const PreviewMessage = memo(PurePreviewMessage, (prev, next) => {
 export const ThinkingMessage = ({ message = '' }: { message?: string }) => {
   const role = 'assistant';
 
-  if (!message.trim()) return null;
+  if (!message || !message.trim()) return null;
 
   // Split into characters but preserve spaces by replacing them with a special character
   const characters = message.split('').map((char, i) => ({

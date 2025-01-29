@@ -16,14 +16,22 @@ export function AssumptionsPanel() {
 
   useEffect(() => {
     const handleShowAssumptions = (e: CustomEvent<{ assumptions: string[]; messageId: string }>) => {
+      const newMessageId = e.detail.messageId;
+
+      // If clicking the same message's button while panel is open, close it
+      if (newMessageId === messageId && activePanel === 'assumptions') {
+        setActivePanel(null);
+        return;
+      }
+
       setAssumptions(e.detail.assumptions);
-      setMessageId(e.detail.messageId);
+      setMessageId(newMessageId);
       setActivePanel('assumptions');
     };
 
     document.addEventListener('showAssumptions', handleShowAssumptions as EventListener);
     return () => document.removeEventListener('showAssumptions', handleShowAssumptions as EventListener);
-  }, [setActivePanel]);
+  }, [setActivePanel, messageId, activePanel]);
 
   return (
     <AnimatePresence>

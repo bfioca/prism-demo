@@ -2,6 +2,7 @@ import { toast } from 'sonner';
 import { useSWRConfig } from 'swr';
 import { useCopyToClipboard } from 'usehooks-ts';
 import { usePanel } from './panel-context';
+import { useState, useEffect , memo } from 'react';
 
 import type { Vote } from '@/lib/db/schema';
 import { getMessageIdFromAnnotations } from '@/lib/utils';
@@ -15,7 +16,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from './ui/tooltip';
-import { memo } from 'react';
 import equal from 'fast-deep-equal';
 
 function extractPrismSections(content: string) {
@@ -55,8 +55,28 @@ export function PureMessageActions({
   isReadonly?: boolean;
 }) {
   const { mutate } = useSWRConfig();
-  const { setActivePanel } = usePanel();
+  const { setActivePanel, activePanel } = usePanel();
   const [_, copyToClipboard] = useCopyToClipboard();
+  const [messageId, setMessageId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handlePanelChange = (e: CustomEvent<{ messageId: string; isStreaming?: boolean }>) => {
+      // Don't update messageId for streaming events
+      if (!e.detail.isStreaming) {
+        setMessageId(e.detail.messageId);
+      }
+    };
+
+    document.addEventListener('showDetails', handlePanelChange as EventListener);
+    document.addEventListener('showAssumptions', handlePanelChange as EventListener);
+    document.addEventListener('showBaseline', handlePanelChange as EventListener);
+
+    return () => {
+      document.removeEventListener('showDetails', handlePanelChange as EventListener);
+      document.removeEventListener('showAssumptions', handlePanelChange as EventListener);
+      document.removeEventListener('showBaseline', handlePanelChange as EventListener);
+    };
+  }, []);
 
   if (isLoading) return null;
   if (message.role === 'user') return null;
@@ -219,6 +239,12 @@ export function PureMessageActions({
                   variant="outline"
                   onClick={() => {
                     if (keyAssumptions && keyAssumptions.length > 0) {
+                      // If clicking the same message's button while panel is open, close it
+                      if (message.id === messageId && activePanel === 'assumptions') {
+                        setActivePanel(null);
+                        return;
+                      }
+
                       document.dispatchEvent(new CustomEvent('showAssumptions', {
                         detail: {
                           assumptions: keyAssumptions,
@@ -260,6 +286,12 @@ export function PureMessageActions({
                   className="py-1 px-2 h-fit text-muted-foreground text-sm"
                   variant="outline"
                   onClick={() => {
+                    // If clicking the same message's button while panel is open, close it
+                    if (message.id === messageId && activePanel === 'baseline') {
+                      setActivePanel(null);
+                      return;
+                    }
+
                     // First set the panel state
                     setActivePanel('baseline');
                     // Then update the content

@@ -38,7 +38,15 @@ export function BaselinePanel() {
 
   useEffect(() => {
     const handleShowBaseline = (e: CustomEvent<{ baseline: string; messageId: string; isStreaming?: boolean }>) => {
-      setMessageId(e.detail.messageId);
+      const newMessageId = e.detail.messageId;
+
+      // If clicking the same message's button while panel is open, close it
+      if (newMessageId === messageId && activePanel === 'baseline' && !e.detail.isStreaming) {
+        setActivePanel(null);
+        return;
+      }
+
+      setMessageId(newMessageId);
 
       // For streaming messages, just update the content
       if (e.detail.isStreaming) {
@@ -65,7 +73,7 @@ export function BaselinePanel() {
       document.removeEventListener('showBaseline', handleShowBaseline as EventListener);
       console.log('=== Baseline Event Listener Removed ===');
     };
-  }, [messageId]);
+  }, [messageId, activePanel]);
 
   return (
     <AnimatePresence>
