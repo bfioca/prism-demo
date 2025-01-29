@@ -32,13 +32,13 @@ export function AppSidebar({ user }: { user: User | undefined }) {
               onClick={() => {
                 setOpenMobile(false);
               }}
-              className="flex flex-row gap-3 items-center"
+              className="flex flex-row gap-3 items-center pl-2"
             >
               <Image
                 src="/images/logo-text.svg"
                 alt="PRISM Logo"
-                width={86}
-                height={24}
+                width={115}
+                height={19}
                 priority
                 className="dark:invert"
               />

@@ -60,6 +60,31 @@ const weatherTools: AllowedTools[] = ['getWeather'];
 
 const allTools: AllowedTools[] = [...blocksTools, ...weatherTools];
 
+interface PerspectiveResponse {
+  text: string;
+  worldview: {
+    name: string;
+    index: number;
+  };
+}
+
+interface PerspectiveData {
+  perspective: string;
+  response: string;
+  worldviewIndex: number;
+}
+
+// Helper function for delay
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const intermediaryData = {
+  baselineResponse: '',
+  perspectives: [] as PerspectiveData[],
+  firstPassSynthesis: '',
+  evaluations: [] as PerspectiveData[],
+  mediation: '',
+};
+
 export async function POST(request: Request) {
   const {
     id,
@@ -127,23 +152,12 @@ export async function POST(request: Request) {
         return 'Error ' + error;
       },
       execute: async (dataStream) => {
-        const intermediaryData = {
-          baselineResponse: '',
-          perspectives: [] as { perspective: string; response: string }[],
-          firstPassSynthesis: '',
-          evaluations: [] as { perspective: string; response: string }[],
-          mediation: '',
-        };
-
-        // Helper function for delay
-        const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
         dataStream.writeData({
           type: 'thinking',
           content: '(1/5) Getting responses from each perspective...',
         });
 
-        let perspectiveResponses: string[];
+        let perspectiveResponses: PerspectiveResponse[];
         if (model.apiIdentifier.includes('deepseek')) {
           // Sequential execution for DeepSeek models
           perspectiveResponses = [];
@@ -164,7 +178,13 @@ export async function POST(request: Request) {
               type: 'details',
               content: JSON.stringify(intermediaryData)
             });
-            perspectiveResponses.push(text);
+            perspectiveResponses.push({
+              text,
+              worldview: {
+                name: WORLDVIEWS[i],
+                index: i
+              }
+            });
           }
         } else {
           // Parallel execution for other models
@@ -176,15 +196,20 @@ export async function POST(request: Request) {
               temperature: 0.2,
             });
             console.info('Generated text for perspective:', text);
+            const worldview = {
+              name: WORLDVIEWS[index],
+              index: index
+            };
             intermediaryData.perspectives.push({
-              perspective: WORLDVIEWS[index],
-              response: text
+              perspective: worldview.name,
+              response: text,
+              worldviewIndex: index
             });
             dataStream.writeData({
               type: 'details',
               content: JSON.stringify(intermediaryData)
             });
-            return text;
+            return { text, worldview } as PerspectiveResponse;
           }));
         }
 
@@ -211,7 +236,7 @@ export async function POST(request: Request) {
                 role: 'system',
                 content: multiPerspectiveSynthesisPrompt(
                   messages[messages.length - 1].content as string,
-                  perspectiveResponses
+                  perspectiveResponses.map(r => r.text)
                 )
               },
               ...messages
@@ -238,7 +263,7 @@ export async function POST(request: Request) {
                       role: 'system',
                       content: multiPerspectiveSynthesisPrompt(
                         messages[messages.length - 1].content as string,
-                        perspectiveResponses
+                        perspectiveResponses.map(r => r.text)
                       )
                     },
                     ...messages
@@ -276,7 +301,8 @@ export async function POST(request: Request) {
             console.info('Generated text for evaluation:', text);
             intermediaryData.evaluations.push({
               perspective: promptMap.perspective,
-              response: text
+              response: text,
+              worldviewIndex: conflictPromptMaps.findIndex(p => p.perspective === promptMap.perspective)
             });
             dataStream.writeData({
               type: 'details',
@@ -296,7 +322,8 @@ export async function POST(request: Request) {
             console.info('Generated text for evaluation:', text);
             intermediaryData.evaluations.push({
               perspective: promptMap.perspective,
-              response: text
+              response: text,
+              worldviewIndex: conflictPromptMaps.findIndex(p => p.perspective === promptMap.perspective)
             });
             dataStream.writeData({
               type: 'details',

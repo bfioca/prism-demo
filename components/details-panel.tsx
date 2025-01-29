@@ -94,14 +94,20 @@ const Section = ({ title, children, step }: SectionProps) => {
   );
 };
 
+interface PerspectiveData {
+  perspective: string;
+  response: string;
+  worldviewIndex: number;
+}
+
 interface PerspectiveCardProps {
   worldview: typeof WORLDVIEW_CONFIG[0];
   perspective: string;
   response: string;
-  index: number;
+  worldviewIndex: number;
 }
 
-const PerspectiveCard = ({ worldview, perspective, response, index }: PerspectiveCardProps) => {
+const PerspectiveCard = ({ worldview, perspective, response, worldviewIndex }: PerspectiveCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isPerspectiveExpanded, setIsPerspectiveExpanded] = useState(false);
 
@@ -114,7 +120,7 @@ const PerspectiveCard = ({ worldview, perspective, response, index }: Perspectiv
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1 }}
+      transition={{ delay: worldviewIndex * 0.1 }}
       className="mb-6 last:mb-0"
     >
       <div
@@ -299,13 +305,13 @@ export function DetailsPanel() {
                       {hasSection('perspectives') && (
                         <Section title="Gathering perspectives" step={1}>
                           <div className="space-y-4">
-                            {details?.perspectives.map((p: any, i: number) => (
+                            {details?.perspectives.map((p: PerspectiveData) => (
                               <PerspectiveCard
-                                key={i}
-                                worldview={WORLDVIEW_CONFIG[i]}
+                                key={p.worldviewIndex}
+                                worldview={WORLDVIEW_CONFIG[p.worldviewIndex]}
                                 perspective={p.perspective}
                                 response={p.response}
-                                index={i}
+                                worldviewIndex={p.worldviewIndex}
                               />
                             ))}
                           </div>
@@ -329,13 +335,13 @@ export function DetailsPanel() {
                       {hasSection('evaluations') && (
                         <Section title="Evaluating perspectives" step={3}>
                           <div className="space-y-4">
-                            {details?.evaluations.map((e: any, i: number) => (
+                            {details?.evaluations.map((e: PerspectiveData) => (
                               <PerspectiveCard
-                                key={i}
-                                worldview={WORLDVIEW_CONFIG[i]}
+                                key={e.worldviewIndex}
+                                worldview={WORLDVIEW_CONFIG[e.worldviewIndex]}
                                 perspective={e.perspective}
                                 response={e.response}
-                                index={i}
+                                worldviewIndex={e.worldviewIndex}
                               />
                             ))}
                           </div>
