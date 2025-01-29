@@ -103,6 +103,12 @@ interface PerspectiveCardProps {
 
 const PerspectiveCard = ({ worldview, perspective, response, index }: PerspectiveCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isPerspectiveExpanded, setIsPerspectiveExpanded] = useState(false);
+
+  const truncateText = (text: string, maxLength: number = 100) => {
+    if (text.length <= maxLength) return text;
+    return text.slice(0, maxLength) + '...';
+  };
 
   return (
     <motion.div
@@ -129,7 +135,15 @@ const PerspectiveCard = ({ worldview, perspective, response, index }: Perspectiv
           </div>
 
           <div className="text-sm text-muted-foreground/80 italic leading-relaxed mb-4">
-            {perspective}
+            {isPerspectiveExpanded ? perspective : truncateText(perspective)}
+            {perspective.length > 100 && (
+              <button
+                onClick={() => setIsPerspectiveExpanded(!isPerspectiveExpanded)}
+                className="ml-2 text-primary hover:text-primary/80 font-medium transition-colors"
+              >
+                <span className="text-xs italic">{isPerspectiveExpanded ? 'less' : 'more'}</span>
+              </button>
+            )}
           </div>
 
           <button
@@ -302,7 +316,10 @@ export function DetailsPanel() {
                         <Section title="Initial synthesis" step={2}>
                           <div className={cn(
                             "prose prose-sm max-w-none",
-                            "text-foreground/90"
+                            "text-foreground/90",
+                            "[&_h3]:text-base [&_h3]:font-semibold [&_h3]:mb-2",
+                            "[&_ol]:list-none [&_ol]:p-0 [&_ol]:m-0",
+                            "[&_ol_ol]:list-none [&_ol_ol]:p-0 [&_ol_ol]:m-0 [&_ol_ol]:ml-0",
                           )}>
                             <Markdown>{details?.firstPassSynthesis}</Markdown>
                           </div>

@@ -2,6 +2,7 @@ import type { Message } from '@/lib/types';
 import type { Vote } from '@/lib/db/schema';
 import { PreviewMessage, ThinkingMessage } from './message';
 import { useEffect, useRef, useState } from 'react';
+import { useScrollToBottom } from './use-scroll-to-bottom';
 
 type DataStreamDelta = {
   type: 'thinking' | 'details' | string;
@@ -29,6 +30,7 @@ export function Messages({
   isBlockVisible: boolean;
   dataStream?: any[];
 }) {
+  const [messagesContainerRef, messagesEndRef] = useScrollToBottom<HTMLDivElement>();
   const [thinkingMessage, setThinkingMessage] = useState<string>('');
   const lastProcessedIndex = useRef(-1);
   const processedDetails = useRef(new Set<string>());
@@ -105,7 +107,7 @@ export function Messages({
   }, [dataStream, setMessages]);
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div ref={messagesContainerRef} className="flex-1 overflow-y-auto">
       <div className="flex flex-col gap-6 py-6">
         {messages.map((message) => (
           <PreviewMessage
@@ -120,6 +122,7 @@ export function Messages({
           />
         ))}
         {isLoading && <ThinkingMessage message={thinkingMessage} />}
+        <div ref={messagesEndRef} className="h-1" />
       </div>
     </div>
   );
