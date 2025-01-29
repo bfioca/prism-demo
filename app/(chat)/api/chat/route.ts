@@ -172,7 +172,8 @@ export async function POST(request: Request) {
             console.info('Generated text for perspective:', text);
             intermediaryData.perspectives.push({
               perspective: WORLDVIEWS[i],
-              response: text
+              response: text,
+              worldviewIndex: i
             });
             dataStream.writeData({
               type: 'details',

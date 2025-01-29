@@ -41,6 +41,7 @@ export function Chat({
   const [mode, setMode] = useState<'prism' | 'chat'>(initialMode);
   const [keyAssumptions, setKeyAssumptions] = useState<string[]>([]);
   const [attachments, setAttachments] = useState<Array<Attachment>>([]);
+  const [error, setError] = useState<{ message: string; retryAfter?: number } | null>(null);
 
   const {
     messages: rawMessages,
@@ -61,7 +62,27 @@ export function Chat({
     onFinish: () => {
       mutate('/api/history');
     },
+    onError: (error) => {
+      if (error.message.includes('Rate limit exceeded')) {
+        // Extract retry time from headers if available
+        const retryAfter = (error as any).response?.headers?.get('Retry-After');
+        setError({
+          message: 'Rate limit exceeded. Please try again later.',
+          retryAfter: retryAfter ? parseInt(retryAfter) : undefined
+        });
+        // Remove the last user message since it wasn't processed
+        setRawMessages(prev => prev.slice(0, -1));
+      } else {
+        setError({ message: error.message });
+      }
+    }
   });
+
+  // Clear error when input changes
+  const handleInputChange = (value: string) => {
+    if (error) setError(null);
+    setInput(value);
+  };
 
   // Process messages to extract key assumptions
   const messages = rawMessages.map((message) => {
@@ -102,6 +123,17 @@ export function Chat({
           isReadonly={isReadonly}
         />
 
+        {error && (
+          <div className="mx-auto w-full max-w-3xl px-4 py-2">
+            <div className="rounded-lg bg-destructive/10 text-destructive px-4 py-2 text-sm">
+              <p>{error.message}</p>
+              {error.retryAfter && (
+                <p className="mt-1">You can try again in {Math.ceil(error.retryAfter / 60)} minutes.</p>
+              )}
+            </div>
+          </div>
+        )}
+
         <Messages
           chatId={id}
           isLoading={isLoading}
@@ -119,7 +151,7 @@ export function Chat({
             <MultimodalInput
               chatId={id}
               input={input}
-              setInput={setInput}
+              setInput={handleInputChange}
               handleSubmit={handleSubmit}
               isLoading={isLoading}
               stop={stop}
