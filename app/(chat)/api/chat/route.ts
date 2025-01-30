@@ -158,8 +158,8 @@ export async function POST(request: Request) {
         });
 
         let perspectiveResponses: PerspectiveResponse[];
-        if (model.apiIdentifier.includes('deepseek')) {
-          // Sequential execution for DeepSeek models
+        if (model.apiIdentifier.includes('distill-llama')) {
+          // Sequential execution for grok models
           perspectiveResponses = [];
           for (let i = 0; i < perspectivePrompts.length; i++) {
             if (i > 0) await delay(5000); // 5 second delay between iterations
@@ -219,8 +219,8 @@ export async function POST(request: Request) {
         const parallelModes = ['baseline', 'synthesis'];
         let baselineResponse: string, firstPassResponse: string;
 
-        if (model.apiIdentifier.includes('deepseek')) {
-          // Sequential execution for DeepSeek models
+        if (model.apiIdentifier.includes('distill-llama')) {
+          // Sequential execution for grok models
           baselineResponse = await generateText({
             model: customModel(model.apiIdentifier),
             messages: messages,
@@ -288,8 +288,8 @@ export async function POST(request: Request) {
         dataStream.writeData({ type: 'thinking', content: '(3/5) Evaluating the first pass response...' });
 
         let evaluationResponses;
-        if (model.apiIdentifier.includes('deepseek')) {
-          // Sequential execution for DeepSeek models
+        if (model.apiIdentifier.includes('distill-llama')) {
+          // Sequential execution for grok models
           evaluationResponses = [];
           for (const promptMap of conflictPromptMaps) {
             if (evaluationResponses.length > 0) await delay(5000); // 5 second delay between iterations
@@ -337,8 +337,8 @@ export async function POST(request: Request) {
         console.info('Evaluation responses:', evaluationResponses);
         dataStream.writeData({ type: 'thinking', content: '(4/5) Mediating the responses...' });
 
-        if (model.apiIdentifier.includes('deepseek')) {
-          await delay(15000); // 5 second delay between calls
+        if (model.apiIdentifier.includes('distill-llama')) {
+          await delay(15000);
         }
 
         const mediationPrompt = multiPerspectiveMediationPrompt(
@@ -374,8 +374,8 @@ export async function POST(request: Request) {
         );
         console.info('Final synthesis prompt:', finalPrompt);
 
-        if (model.apiIdentifier.includes('deepseek')) {
-          await delay(15000); // 5 second delay between calls
+        if (model.apiIdentifier.includes('distill-llama')) {
+          await delay(15000);
         }
 
         const result = streamText({
