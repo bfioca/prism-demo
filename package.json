@@ -20,6 +20,7 @@
   "dependencies": {
     "@ai-sdk/groq": "^1.1.6",
     "@ai-sdk/openai": "1.0.19",
+    "@ai-sdk/togetherai": "^0.1.6",
     "@codemirror/lang-javascript": "^6.2.2",
     "@codemirror/lang-python": "^6.1.6",
     "@codemirror/state": "^6.5.0",

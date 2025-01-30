@@ -1,5 +1,6 @@
 import { extractReasoningMiddleware, experimental_wrapLanguageModel as wrapLanguageModel } from 'ai';
 import { groq } from '@ai-sdk/groq';
+import { createTogetherAI, togetherai } from '@ai-sdk/togetherai';
 import { createPortkey } from '@portkey-ai/vercel-provider';
 
 const portkeyConfig = {
@@ -19,11 +20,13 @@ export const portkey = createPortkey({
 import { customMiddleware } from './custom-middleware';
 
 export const customModel = (apiIdentifier: string) => {
-  if (apiIdentifier.includes('deepseek')) {
+  if (apiIdentifier.includes('deepseek-r1')) {
     return wrapLanguageModel({
-      model: groq('deepseek-r1-distill-llama-70b'),
+      model: groq(apiIdentifier),
       middleware: extractReasoningMiddleware({ tagName: 'think' }),
     });
+  } else if (apiIdentifier.includes('deepseek-ai')) {
+    return togetherai(apiIdentifier);
   } else {
     return wrapLanguageModel({
       model: portkey.chatModel(apiIdentifier),

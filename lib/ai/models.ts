@@ -22,11 +22,17 @@ export const models: Array<Model> = [
     description: 'For complex, multi-step tasks',
   },
   {
-    id: 'deepseek-r1-distill-llama-70b',
+    id: 'deepseek-ai/DeepSeek-R1',
     label: 'DeepSeek R1',
-    apiIdentifier: 'deepseek-r1-distill-llama-70b',
+    apiIdentifier: 'deepseek-ai/DeepSeek-R1',
     description: 'For fast reasoning',
   },
+  // {
+  //   id: 'deepseek-r1-distill-llama-70b',
+  //   label: 'DeepSeek R1',
+  //   apiIdentifier: 'deepseek-r1-distill-llama-70b',
+  //   description: 'For fast reasoning',
+  // },
   // {
   //   id: 'o1-mini',
   //   label: 'o1 mini',
