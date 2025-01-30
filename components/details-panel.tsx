@@ -305,7 +305,9 @@ export function DetailsPanel() {
                       {hasSection('perspectives') && (
                         <Section title="Gathering perspectives" step={1}>
                           <div className="space-y-4">
-                            {details?.perspectives.map((p: PerspectiveData) => (
+                            {[...details?.perspectives]
+                              .sort((a, b) => a.worldviewIndex - b.worldviewIndex)
+                              .map((p: PerspectiveData) => (
                               <PerspectiveCard
                                 key={p.worldviewIndex}
                                 worldview={WORLDVIEW_CONFIG[p.worldviewIndex]}
@@ -335,7 +337,9 @@ export function DetailsPanel() {
                       {hasSection('evaluations') && (
                         <Section title="Evaluating perspectives" step={3}>
                           <div className="space-y-4">
-                            {details?.evaluations.map((e: PerspectiveData) => (
+                            {[...details?.evaluations]
+                              .sort((a, b) => a.worldviewIndex - b.worldviewIndex)
+                              .map((e: PerspectiveData) => (
                               <PerspectiveCard
                                 key={e.worldviewIndex}
                                 worldview={WORLDVIEW_CONFIG[e.worldviewIndex]}

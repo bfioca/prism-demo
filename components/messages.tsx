@@ -2,7 +2,6 @@ import type { Message } from '@/lib/types';
 import type { Vote } from '@/lib/db/schema';
 import { PreviewMessage, ThinkingMessage } from './message';
 import { useEffect, useRef, useState } from 'react';
-import { useScrollToBottom } from './use-scroll-to-bottom';
 
 type DataStreamDelta = {
   type: 'thinking' | 'details' | string;
@@ -30,10 +29,22 @@ export function Messages({
   isBlockVisible: boolean;
   dataStream?: any[];
 }) {
-  const [messagesContainerRef, messagesEndRef] = useScrollToBottom<HTMLDivElement>();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const [thinkingMessage, setThinkingMessage] = useState<string>('');
   const lastProcessedIndex = useRef(-1);
   const processedDetails = useRef(new Set<string>());
+  const prevMessagesLength = useRef(messages.length);
+  const prevThinkingMessage = useRef(thinkingMessage);
+
+  // Scroll to bottom when new messages are added or thinking message changes
+  useEffect(() => {
+    if (messages.length > prevMessagesLength.current ||
+        (thinkingMessage && !prevThinkingMessage.current)) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+    prevMessagesLength.current = messages.length;
+    prevThinkingMessage.current = thinkingMessage;
+  }, [messages.length, thinkingMessage]);
 
   useEffect(() => {
     if (!dataStream?.length) return;
@@ -107,7 +118,7 @@ export function Messages({
   }, [dataStream, setMessages]);
 
   return (
-    <div ref={messagesContainerRef} className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto">
       <div className="flex flex-col gap-6 py-6">
         {messages.map((message) => (
           <PreviewMessage

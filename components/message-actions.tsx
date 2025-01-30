@@ -84,7 +84,7 @@ export function PureMessageActions({
     return null;
 
   const { keyAssumptions } = extractPrismSections(message.content as string);
-  const isPrismResponse = keyAssumptions !== undefined;
+  const isPrismResponse = message.prism_data !== undefined;
 
   // Debug logging
   console.log('MessageActions:', {
@@ -92,11 +92,7 @@ export function PureMessageActions({
     keyAssumptions,
     isPrismResponse,
     prism_data: message.prism_data,
-    hasBaselineResponse: message.prism_data?.baselineResponse ? true : false,
-    contentMatches: {
-      keyAssumptionsMatch: (message.content as string).match(/\d+\.\s*\*\*Key Assumptions\*\*:?\s*([\s\S]*?)(?=\s*\d+\.\s*\*\*Response\*\*)/i),
-      responseMatch: (message.content as string).match(/\d+\.\s*\*\*Response\*\*:?\s*([\s\S]*?)$/i)
-    }
+    hasBaselineResponse: message.prism_data?.baselineResponse ? true : false
   });
 
   return (
