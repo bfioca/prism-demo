@@ -39,7 +39,6 @@ export function Chat({
 }) {
   const { mutate } = useSWRConfig();
   const [mode, setMode] = useState<'prism' | 'chat'>(initialMode);
-  const [keyAssumptions, setKeyAssumptions] = useState<string[]>([]);
   const [attachments, setAttachments] = useState<Array<Attachment>>([]);
   const [error, setError] = useState<{ message: string; retryAfter?: number } | null>(null);
 
@@ -87,19 +86,10 @@ export function Chat({
   // Process messages to extract key assumptions
   const messages = rawMessages.map((message) => {
     if (message.role === 'assistant' && message.content) {
-      const content = message.content as string;
-      const keyAssumptionsMatch = content.match(/Key Assumptions:\s*([\s\S]*?)\s*Response:/);
-      const responseMatch = content.match(/Response:\s*([\s\S]*)/);
-
-      if (keyAssumptionsMatch && responseMatch) {
-        const keyAssumptions = keyAssumptionsMatch[1].trim();
-        // Keep the original content but add the processed parts as properties
-        return {
-          ...message,
-          keyAssumptions,
-          content: content // Keep the original content
-        };
-      }
+      return {
+        ...message,
+        content: message.content // Keep the original content
+      };
     }
     return message;
   });
