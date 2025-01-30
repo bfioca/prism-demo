@@ -6,6 +6,7 @@ export function useScrollToBottom<T extends HTMLElement>(): [
 ] {
   const containerRef = useRef<T>(null);
   const endRef = useRef<T>(null);
+  const lastContentHeight = useRef<number>(0);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -13,7 +14,12 @@ export function useScrollToBottom<T extends HTMLElement>(): [
 
     if (container && end) {
       const observer = new MutationObserver(() => {
-        end.scrollIntoView({ behavior: 'instant', block: 'end' });
+        // Only scroll if content height has increased (new content added)
+        const currentHeight = container.scrollHeight;
+        if (currentHeight > lastContentHeight.current) {
+          end.scrollIntoView({ behavior: 'smooth', block: 'end' });
+          lastContentHeight.current = currentHeight;
+        }
       });
 
       observer.observe(container, {
