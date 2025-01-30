@@ -228,33 +228,35 @@ export function PureMessageActions({
 
         {isPrismResponse && (
           <>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  className="py-1 px-2 h-fit text-muted-foreground text-sm"
-                  variant="outline"
-                  onClick={() => {
-                    if (keyAssumptions && keyAssumptions.length > 0) {
-                      // If clicking the same message's button while panel is open, close it
-                      if (message.id === messageId && activePanel === 'assumptions') {
-                        setActivePanel(null);
-                        return;
-                      }
-
-                      document.dispatchEvent(new CustomEvent('showAssumptions', {
-                        detail: {
-                          assumptions: keyAssumptions,
-                          messageId: message.id
+            {keyAssumptions && keyAssumptions.length > 0 && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    className="py-1 px-2 h-fit text-muted-foreground text-sm"
+                    variant="outline"
+                    onClick={() => {
+                      if (keyAssumptions && keyAssumptions.length > 0) {
+                        // If clicking the same message's button while panel is open, close it
+                        if (message.id === messageId && activePanel === 'assumptions') {
+                          setActivePanel(null);
+                          return;
                         }
-                      }));
-                    }
-                  }}
-                >
-                  Key Assumptions
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>View Key Assumptions</TooltipContent>
-            </Tooltip>
+
+                        document.dispatchEvent(new CustomEvent('showAssumptions', {
+                          detail: {
+                            assumptions: keyAssumptions,
+                            messageId: message.id
+                          }
+                        }));
+                      }
+                    }}
+                  >
+                    Key Assumptions
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>View Key Assumptions</TooltipContent>
+              </Tooltip>
+            )}
 
             <Tooltip>
               <TooltipTrigger asChild>

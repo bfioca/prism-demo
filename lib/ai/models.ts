@@ -6,6 +6,7 @@ export interface Model {
   label: string;
   apiIdentifier: string;
   description: string;
+  restricted: boolean;
 }
 
 export const models: Array<Model> = [
@@ -14,19 +15,28 @@ export const models: Array<Model> = [
     label: 'GPT 4o mini',
     apiIdentifier: 'gpt-4o-mini',
     description: 'Small model for fast, lightweight tasks',
+    restricted: false,
   },
   {
     id: 'gpt-4o',
     label: 'GPT 4o',
     apiIdentifier: 'gpt-4o',
     description: 'For complex, multi-step tasks',
+    restricted: true,
   },
   {
-    id: 'deepseek-r1-distill-llama-70b',
+    id: 'deepseek-ai/DeepSeek-R1',
     label: 'DeepSeek R1',
-    apiIdentifier: 'deepseek-r1-distill-llama-70b',
+    apiIdentifier: 'deepseek-ai/DeepSeek-R1',
     description: 'For fast reasoning',
+    restricted: false
   },
+  // {
+  //   id: 'deepseek-r1-distill-llama-70b',
+  //   label: 'DeepSeek R1',
+  //   apiIdentifier: 'deepseek-r1-distill-llama-70b',
+  //   description: 'For fast reasoning',
+  // },
   // {
   //   id: 'o1-mini',
   //   label: 'o1 mini',
@@ -47,5 +57,5 @@ export function getModelsForUser(email: string | null | undefined): Array<Model>
   if (isPSLEmail(email)) {
     return models;
   }
-  return models.filter(model => model.id === DEFAULT_MODEL_NAME);
+  return models.filter(model => model.id === DEFAULT_MODEL_NAME || model.id === 'deepseek-ai/DeepSeek-R1');
 }

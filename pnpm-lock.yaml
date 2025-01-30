@@ -11,6 +11,9 @@ dependencies:
   '@ai-sdk/openai':
     specifier: 1.0.19
     version: 1.0.19(zod@3.24.1)
+  '@ai-sdk/togetherai':
+    specifier: ^0.1.6
+    version: 0.1.6(zod@3.24.1)
   '@codemirror/lang-javascript':
     specifier: ^6.2.2
     version: 6.2.2
@@ -258,6 +261,17 @@ packages:
       zod: 3.24.1
     dev: false
 
+  /@ai-sdk/openai-compatible@0.1.6(zod@3.24.1):
+    resolution: {integrity: sha512-8byBCRZqdhIP4C6ch4kZ1yjJF6yLUCXik82+71KF3okv5Jl+Gi6qo3P7MJb/LpkdSvXa6lEroNXPr4itThWbxA==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.0.0
+    dependencies:
+      '@ai-sdk/provider': 1.0.6
+      '@ai-sdk/provider-utils': 2.1.5(zod@3.24.1)
+      zod: 3.24.1
+    dev: false
+
   /@ai-sdk/openai@1.0.19(zod@3.24.1):
     resolution: {integrity: sha512-7qmLgppWpGUhSgrH0a6CtgD9hZeRh2hARppl1B7fNhVbekYftSMucsdCiVlKbQzSKPxox0vkNMmwjKa/7xf8bQ==}
     engines: {node: '>=18'}
@@ -355,6 +369,18 @@ packages:
       react: 18.3.1
       swr: 2.3.0(react@18.3.1)
       throttleit: 2.1.0
+      zod: 3.24.1
+    dev: false
+
+  /@ai-sdk/togetherai@0.1.6(zod@3.24.1):
+    resolution: {integrity: sha512-WElZ2sFs0kgnrjoI4bWNm8jOqNaZKARZWhvh9ccHeAJr1fyp0Ty2bM35aNFN7taUrTL4eViXr7suDEU5rgnGEg==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.0.0
+    dependencies:
+      '@ai-sdk/openai-compatible': 0.1.6(zod@3.24.1)
+      '@ai-sdk/provider': 1.0.6
+      '@ai-sdk/provider-utils': 2.1.5(zod@3.24.1)
       zod: 3.24.1
     dev: false
 
