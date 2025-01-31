@@ -98,6 +98,7 @@ interface PerspectiveData {
   perspective: string;
   response: string;
   worldviewIndex: number;
+  id: string;
 }
 
 interface PerspectiveCardProps {
@@ -305,11 +306,12 @@ export function DetailsPanel() {
                       {hasSection('perspectives') && (
                         <Section title="Gathering perspectives" step={1}>
                           <div className="space-y-4">
-                            {[...details?.perspectives]
-                              .sort((a, b) => a.worldviewIndex - b.worldviewIndex)
+                            {details?.perspectives
+                              ?.filter((p: PerspectiveData) => p.perspective && p.response)
+                              .sort((a: PerspectiveData, b: PerspectiveData) => a.worldviewIndex - b.worldviewIndex)
                               .map((p: PerspectiveData) => (
                               <PerspectiveCard
-                                key={p.worldviewIndex}
+                                key={p.id}
                                 worldview={WORLDVIEW_CONFIG[p.worldviewIndex]}
                                 perspective={p.perspective}
                                 response={p.response}
@@ -337,11 +339,12 @@ export function DetailsPanel() {
                       {hasSection('evaluations') && (
                         <Section title="Evaluating perspectives" step={3}>
                           <div className="space-y-4">
-                            {[...details?.evaluations]
-                              .sort((a, b) => a.worldviewIndex - b.worldviewIndex)
+                            {details?.evaluations
+                              ?.filter((e: PerspectiveData) => e.perspective && e.response)
+                              .sort((a: PerspectiveData, b: PerspectiveData) => a.worldviewIndex - b.worldviewIndex)
                               .map((e: PerspectiveData) => (
                               <PerspectiveCard
-                                key={e.worldviewIndex}
+                                key={e.id}
                                 worldview={WORLDVIEW_CONFIG[e.worldviewIndex]}
                                 perspective={e.perspective}
                                 response={e.response}

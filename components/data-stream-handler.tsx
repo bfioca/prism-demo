@@ -45,7 +45,11 @@ export function DataStreamHandler({ id }: { id: string }) {
 
       setBlock((draftBlock) => {
         if (!draftBlock) {
-          return { ...initialBlockData, status: 'streaming' };
+          return {
+            ...initialBlockData,
+            status: 'streaming',
+            prism_data: delta.type === 'thinking' ? {} : undefined
+          };
         }
 
         switch (delta.type) {
@@ -113,6 +117,13 @@ export function DataStreamHandler({ id }: { id: string }) {
             return {
               ...draftBlock,
               thinkingMessage: delta.content as string,
+              status: 'streaming',
+            };
+
+          case 'details':
+            return {
+              ...draftBlock,
+              prism_data: JSON.parse(delta.content as string),
               status: 'streaming',
             };
 

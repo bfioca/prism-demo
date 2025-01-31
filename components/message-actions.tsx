@@ -3,6 +3,7 @@ import { useSWRConfig } from 'swr';
 import { useCopyToClipboard } from 'usehooks-ts';
 import { usePanel } from './panel-context';
 import { useState, useEffect , memo } from 'react';
+import { useBlock } from '@/hooks/use-block';
 
 import type { Vote } from '@/lib/db/schema';
 import { getMessageIdFromAnnotations } from '@/lib/utils';
@@ -58,6 +59,7 @@ export function PureMessageActions({
   const { setActivePanel, activePanel } = usePanel();
   const [_, copyToClipboard] = useCopyToClipboard();
   const [messageId, setMessageId] = useState<string | null>(null);
+  const { block } = useBlock();
 
   useEffect(() => {
     const handlePanelChange = (e: CustomEvent<{ messageId: string; isStreaming?: boolean }>) => {
@@ -84,7 +86,9 @@ export function PureMessageActions({
     return null;
 
   const { keyAssumptions } = extractPrismSections(message.content as string);
-  const isPrismResponse = message.prism_data !== undefined;
+  const isPrismResponse = message.prism_data !== undefined ||
+    (message.content as string)?.includes('1. **Key Assumptions**') || // Prism responses always have this structure
+    (block?.thinkingMessage?.includes('Getting responses from each perspective')); // Prism mode thinking message
 
   // Debug logging
   console.log('MessageActions:', {

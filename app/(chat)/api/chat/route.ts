@@ -69,6 +69,7 @@ interface PerspectiveResponse {
 }
 
 interface PerspectiveData {
+  id: string;
   perspective: string;
   response: string;
   worldviewIndex: number;
@@ -83,6 +84,17 @@ const intermediaryData = {
   firstPassSynthesis: '',
   evaluations: [] as PerspectiveData[],
   mediation: '',
+  isPrismMode: false,
+};
+
+// Reset function to clear intermediaryData
+const resetIntermediaryData = () => {
+  intermediaryData.baselineResponse = '';
+  intermediaryData.perspectives = [];
+  intermediaryData.firstPassSynthesis = '';
+  intermediaryData.evaluations = [];
+  intermediaryData.mediation = '';
+  intermediaryData.isPrismMode = false;
 };
 
 export async function POST(request: Request) {
@@ -152,9 +164,19 @@ export async function POST(request: Request) {
         return 'Error ' + error;
       },
       execute: async (dataStream) => {
+        // Reset intermediary data at the start of each request
+        resetIntermediaryData();
+
         dataStream.writeData({
           type: 'thinking',
           content: '(1/5) Getting responses from each perspective...',
+        });
+
+        // Mark as prism mode immediately
+        intermediaryData.isPrismMode = true;
+        dataStream.writeData({
+          type: 'details',
+          content: JSON.stringify(intermediaryData)
         });
 
         let perspectiveResponses: PerspectiveResponse[];
@@ -171,6 +193,7 @@ export async function POST(request: Request) {
             });
             console.info('Generated text for perspective:', text);
             intermediaryData.perspectives.push({
+              id: generateUUID(),
               perspective: WORLDVIEWS[i],
               response: text,
               worldviewIndex: i
@@ -202,6 +225,7 @@ export async function POST(request: Request) {
               index: index
             };
             intermediaryData.perspectives.push({
+              id: generateUUID(),
               perspective: worldview.name,
               response: text,
               worldviewIndex: index
@@ -301,6 +325,7 @@ export async function POST(request: Request) {
             });
             console.info('Generated text for evaluation:', text);
             intermediaryData.evaluations.push({
+              id: generateUUID(),
               perspective: promptMap.perspective,
               response: text,
               worldviewIndex: conflictPromptMaps.findIndex(p => p.perspective === promptMap.perspective)
@@ -322,6 +347,7 @@ export async function POST(request: Request) {
             });
             console.info('Generated text for evaluation:', text);
             intermediaryData.evaluations.push({
+              id: generateUUID(),
               perspective: promptMap.perspective,
               response: text,
               worldviewIndex: conflictPromptMaps.findIndex(p => p.perspective === promptMap.perspective)
