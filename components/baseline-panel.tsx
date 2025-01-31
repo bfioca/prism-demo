@@ -118,7 +118,14 @@ export function BaselinePanel() {
                   ) : baseline ? (
                     <div className={cn(
                       "prose prose-sm max-w-none",
-                      "text-foreground/90"
+                      "text-foreground/90",
+                      "dark:prose-invert",
+                      "prose-headings:text-foreground dark:prose-headings:text-foreground/90",
+                      "prose-h1:text-xl prose-h2:text-lg prose-h3:text-base",
+                      "prose-h1:font-semibold prose-h2:font-semibold prose-h3:font-medium",
+                      "prose-p:text-muted-foreground dark:prose-p:text-muted-foreground/90",
+                      "prose-strong:text-foreground dark:prose-strong:text-foreground/90",
+                      "prose-em:text-foreground dark:prose-em:text-foreground/90"
                     )}>
                       <Markdown>{baseline}</Markdown>
                     </div>
