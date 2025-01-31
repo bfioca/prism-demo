@@ -3,7 +3,7 @@
 import type { ChatRequestOptions } from 'ai';
 import cx from 'classnames';
 import { AnimatePresence, motion } from 'framer-motion';
-import { memo, useMemo, useState } from 'react';
+import { memo, useMemo, useState, useEffect } from 'react';
 
 import type { Vote } from '@/lib/db/schema';
 import type { Message } from '@/lib/types';
@@ -57,6 +57,20 @@ const PurePreviewMessage = ({
   isReadonly: boolean;
 }) => {
   const [mode, setMode] = useState<'view' | 'edit'>('view');
+
+  // Add debug logging
+  useEffect(() => {
+    console.log('[Message Debug]', {
+      id: message.id,
+      role: message.role,
+      content: message.content,
+      toolInvocations: message.toolInvocations,
+      keyAssumptions: message.keyAssumptions,
+      mode,
+      isLoading,
+      isReadonly
+    });
+  }, [message, mode, isLoading, isReadonly]);
 
   const { content: displayContent, isComplete } = useMemo(() => {
     if (!message.content) {

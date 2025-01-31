@@ -67,11 +67,9 @@ export function BaselinePanel() {
     };
 
     document.addEventListener('showBaseline', handleShowBaseline as EventListener);
-    console.log('=== Baseline Event Listener Added ===');
 
     return () => {
       document.removeEventListener('showBaseline', handleShowBaseline as EventListener);
-      console.log('=== Baseline Event Listener Removed ===');
     };
   }, [messageId, activePanel]);
 

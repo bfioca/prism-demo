@@ -39,7 +39,10 @@ Synthesize the provided perspectives into a single response using the Pareto Opt
 Ensure the synthesized response maximizes the priorities of each perspective while minimizing tradeoffs and avoiding disproportionately worsening any perspective's objectives.
 The First Pass Response and Mediations have been provided as contextual inputs. Use them to inform your reasoning and incorporate them where they align with Pareto optimality.
 
-Output Schema:
+## IMPORTANT:
+- always fillow the output schema exactly using the markdown format provided. Your answer will be sent to a UI that relies on this format and if it's incorrect it will break the UI.
+
+## Output Schema:
 1. **Key Assumptions**: Provide the key assumptions that the response relies on.
 2. **Response**: Provide a single, coherent response that reflects the Pareto Optimal integrated priorities of the perspectives.
 

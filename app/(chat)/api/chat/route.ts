@@ -189,7 +189,7 @@ export async function POST(request: Request) {
             const { text } = await generateText({
               model: customModel(model.apiIdentifier),
               messages: [{ role: 'system', content: perspectivePrompts[i] }, ...messages],
-              temperature: 0.2,
+              temperature: model.apiIdentifier === 'o3-mini' ? undefined : 0.2,
             });
             console.info('Generated text for perspective:', text);
             intermediaryData.perspectives.push({
@@ -217,7 +217,7 @@ export async function POST(request: Request) {
             const { text } = await generateText({
               model: customModel(model.apiIdentifier),
               messages: [{ role: 'system', content: prompt }, ...messages],
-              temperature: 0.2,
+              temperature: model.apiIdentifier === 'o3-mini' ? undefined : 0.2,
             });
             console.info('Generated text for perspective:', text);
             const worldview = {
@@ -248,7 +248,7 @@ export async function POST(request: Request) {
           baselineResponse = await generateText({
             model: customModel(model.apiIdentifier),
             messages: messages,
-            temperature: 0.2,
+            temperature: model.apiIdentifier === 'o3-mini' ? undefined : 0.2,
           }).then(res => res.text);
 
           await delay(5000); // 5 second delay between calls
@@ -266,7 +266,7 @@ export async function POST(request: Request) {
               },
               ...messages
             ],
-            temperature: 0.2,
+            temperature: model.apiIdentifier === 'o3-mini' ? undefined : 0.2,
           }).then(res => res.text);
         } else {
           // Parallel execution for other models
@@ -276,7 +276,7 @@ export async function POST(request: Request) {
                 const { text } = await generateText({
                   model: customModel(model.apiIdentifier),
                   messages: messages,
-                  temperature: 0.2,
+                  temperature: model.apiIdentifier === 'o3-mini' ? undefined : 0.2,
                 });
                 return text;
               } else {
@@ -293,7 +293,7 @@ export async function POST(request: Request) {
                     },
                     ...messages
                   ],
-                  temperature: 0.2,
+                  temperature: model.apiIdentifier === 'o3-mini' ? undefined : 0.2,
                 });
                 return text;
               }
@@ -321,7 +321,7 @@ export async function POST(request: Request) {
             const { text } = await generateText({
               model: customModel(model.apiIdentifier),
               messages: [{ role: 'system', content: promptMap.prompt }, ...messages],
-              temperature: 0.2,
+              temperature: model.apiIdentifier === 'o3-mini' ? undefined : 0.2,
             });
             console.info('Generated text for evaluation:', text);
             intermediaryData.evaluations.push({
@@ -343,7 +343,7 @@ export async function POST(request: Request) {
             const { text } = await generateText({
               model: customModel(model.apiIdentifier),
               messages: [{ role: 'system', content: promptMap.prompt }, ...messages],
-              temperature: 0.2,
+              temperature: model.apiIdentifier === 'o3-mini' ? undefined : 0.2,
             });
             console.info('Generated text for evaluation:', text);
             intermediaryData.evaluations.push({
@@ -378,7 +378,7 @@ export async function POST(request: Request) {
         const mediationResult = await generateText({
           model: customModel(model.apiIdentifier),
           messages: [{ role: 'system', content: mediationPrompt }, ...messages],
-          temperature: 0.2,
+          temperature: model.apiIdentifier === 'o3-mini' ? undefined : 0.2,
         });
 
         intermediaryData.mediation = mediationResult.text;
@@ -407,7 +407,7 @@ export async function POST(request: Request) {
         const result = streamText({
           model: customModel(model.apiIdentifier),
           messages: [{ role: 'system', content: finalPrompt }, ...messages],
-          temperature: 0.2,
+          temperature: model.apiIdentifier === 'o3-mini' ? undefined : 0.2,
           experimental_generateMessageId: generateUUID,
           experimental_transform: smoothStream({ chunking: 'word' }),
           onChunk: (chunk) => {
@@ -520,6 +520,7 @@ export async function POST(request: Request) {
                     system:
                       'Write about the given topic. Markdown is supported. Use headings wherever appropriate.',
                     prompt: title,
+                    temperature: model.apiIdentifier === 'o3-mini' ? undefined : 0.2,
                   });
 
                   for await (const delta of fullStream) {
@@ -542,6 +543,7 @@ export async function POST(request: Request) {
                     model: customModel(model.apiIdentifier),
                     system: codePrompt,
                     prompt: title,
+                    temperature: model.apiIdentifier === 'o3-mini' ? undefined : 0.2,
                     schema: z.object({
                       code: z.string(),
                     }),
@@ -617,14 +619,7 @@ export async function POST(request: Request) {
                     model: customModel(model.apiIdentifier),
                     system: updateDocumentPrompt(currentContent, 'text'),
                     prompt: description,
-                    experimental_providerMetadata: {
-                      openai: {
-                        prediction: {
-                          type: 'content',
-                          content: currentContent,
-                        },
-                      },
-                    },
+                    temperature: model.apiIdentifier === 'o3-mini' ? undefined : 0.2,
                   });
 
                   for await (const delta of fullStream) {
@@ -647,6 +642,7 @@ export async function POST(request: Request) {
                     model: customModel(model.apiIdentifier),
                     system: updateDocumentPrompt(currentContent, 'code'),
                     prompt: description,
+                    temperature: model.apiIdentifier === 'o3-mini' ? undefined : 0.2,
                     schema: z.object({
                       code: z.string(),
                     }),
@@ -716,6 +712,7 @@ export async function POST(request: Request) {
                   system:
                     'You are a help writing assistant. Given a piece of writing, please offer suggestions to improve the piece of writing and describe the change. It is very important for the edits to contain full sentences instead of just words. Max 5 suggestions.',
                   prompt: document.content,
+                  temperature: model.apiIdentifier === 'o3-mini' ? undefined : 0.2,
                   output: 'array',
                   schema: z.object({
                     originalSentence: z
