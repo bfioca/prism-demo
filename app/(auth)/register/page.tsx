@@ -123,6 +123,26 @@ export default function Page() {
                 </Link>
                 {' instead.'}
               </p>
+              <p className="text-center text-xs text-gray-500 mt-4 dark:text-zinc-400">
+                By continuing, you agree to our{' '}
+                <Link
+                  href="https://www.prismframework.ai/terms-of-service"
+                  className="hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Terms of Service
+                </Link>
+                {' and '}
+                <Link
+                  href="https://www.prismframework.ai/privacy-policy"
+                  className="hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Privacy Policy
+                </Link>
+              </p>
             </AuthForm>
           </div>
         </div>
