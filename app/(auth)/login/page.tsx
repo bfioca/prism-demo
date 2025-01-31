@@ -53,14 +53,19 @@ export default function Page() {
     <div className="flex h-dvh w-screen items-center justify-center bg-background">
       <div className="w-full max-w-md space-y-8">
         <div className="flex flex-col items-center justify-center">
-          <Image
-            src="/images/logo-text.svg"
-            alt="Logo"
-            width={200}
-            height={50}
-            className="mx-auto"
-            priority
-          />
+          <Link href="https://www.prismframework.ai" target="_blank" rel="noopener noreferrer">
+            <Image
+              src="/images/logo-text.svg"
+              alt="Logo"
+              width={200}
+              height={50}
+              className="mx-auto"
+              priority
+            />
+          </Link>
+          <p className="mt-2 text-center text-sm text-gray-600 dark:text-zinc-400">
+            A Multi-Perspective Framework for AI Alignment
+          </p>
         </div>
 
         <div className="w-full overflow-hidden rounded-2xl">
@@ -70,14 +75,14 @@ export default function Page() {
             </p>
           </div>
 
-          <div className="mt-8 flex flex-col gap-6">
+          <div className="mt-8 flex flex-col gap-4">
             <form action={googleAction}>
               <Button
                 type="submit"
                 variant="outline"
                 className="w-full"
               >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center gap-2">
                   <svg className="size-5" viewBox="0 0 24 24">
                     <path
                       d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
