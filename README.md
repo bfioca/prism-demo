@@ -59,7 +59,7 @@ Before you begin, ensure you have:
 1. Clone the repository:
 ```bash
 git clone https://github.com/PioneerSquareLabs/prism-demo
-cd ai-chatbot
+cd prism-demo
 ```
 
 2. Install dependencies:

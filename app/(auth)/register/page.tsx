@@ -62,7 +62,15 @@ export default function Page() {
               alt="Logo"
               width={200}
               height={50}
-              className="mx-auto"
+              className="mx-auto block dark:hidden"
+              priority
+            />
+            <Image
+              src="/images/logo-white-text.svg"
+              alt="Logo"
+              width={200}
+              height={50}
+              className="mx-auto hidden dark:block"
               priority
             />
           </Link>
