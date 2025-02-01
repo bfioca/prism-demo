@@ -26,6 +26,26 @@ Learn more about the PRISM framework at [prismframework.ai](https://prismframewo
 - 🔄 Real-time updates and streaming responses
 - 📄 Document processing and analysis
 
+### PRISM Implementation Details
+The core PRISM implementation can be found in the `lib/ai/prism` directory:
+
+- `lib/ai/prism/index.ts` - Main PRISM response processing logic
+- `lib/ai/prism/prompts/` - Contains all prompt templates:
+  - `worldviews.ts` - The seven basis worldviews definitions
+  - `perspective.ts` - Prompts for generating perspective-specific responses
+  - `synthesize.ts` - Prompts for multi-perspective synthesis
+  - `conflict.ts` - Prompts for identifying conflicts between perspectives
+  - `mediations.ts` - Prompts for mediating between conflicting viewpoints
+
+The PRISM workflow follows these steps:
+1. Generate responses from each worldview perspective
+2. Create a baseline response and initial synthesis
+3. Evaluate potential conflicts between perspectives
+4. Mediate between conflicting viewpoints
+5. Generate final synthesized response
+
+Each step streams its progress and intermediate results to the UI for full transparency.
+
 ### Technical Features
 - 🔐 Secure authentication with Google OAuth and email/password
 - 💾 PostgreSQL database for persistent storage
