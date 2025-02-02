@@ -1,3 +1,5 @@
+// This file contains the prompt for generating mediations between the perspectives.
+
 export const multiPerspectiveMediationPrompt = (
   userMessage: string,
   perspectives: string[],

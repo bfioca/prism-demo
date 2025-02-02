@@ -10,6 +10,7 @@ import {
   updateChatVisiblityById,
 } from '@/lib/db/queries';
 import { VisibilityType } from '@/components/visibility-selector';
+import { Message } from '@/lib/types';
 
 export async function saveModelId(model: string) {
   const cookieStore = await cookies();
@@ -19,7 +20,7 @@ export async function saveModelId(model: string) {
 export async function generateTitleFromUserMessage({
   message,
 }: {
-  message: CoreUserMessage;
+  message: Message;
 }) {
   const { text: title } = await generateText({
     model: customModel('gpt-4o-mini'),
@@ -28,7 +29,10 @@ export async function generateTitleFromUserMessage({
     - ensure it is not more than 80 characters long
     - the title should be a summary of the user's message
     - do not use quotes or colons`,
-    prompt: JSON.stringify(message),
+    prompt: JSON.stringify({
+      role: message.role,
+      content: message.content
+    }),
   });
 
   return title;

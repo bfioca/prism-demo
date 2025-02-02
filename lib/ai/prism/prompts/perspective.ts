@@ -1,4 +1,6 @@
-import { ARCHAIC_WORLDVIEW, EMOTIONAL_WORLDVIEW, SOCIAL_WORLDVIEW, RATIONAL_WORLDVIEW, PLURALISTIC_WORLDVIEW, NARRATIVE_INTEGRATED_WORLDVIEW, NONDUAL_WORLDVIEW } from './worldviews';
+// This file contains the prompts for generating each perspective.
+
+import { ARCHAIC_WORLDVIEW_PERSPECTIVE, EMOTIONAL_WORLDVIEW_PERSPECTIVE, SOCIAL_WORLDVIEW_PERSPECTIVE, RATIONAL_WORLDVIEW_PERSPECTIVE, PLURALISTIC_WORLDVIEW_PERSPECTIVE, NARRATIVE_INTEGRATED_WORLDVIEW_PERSPECTIVE, NONDUAL_WORLDVIEW_PERSPECTIVE } from './worldviews';
 
 // System Prompt Template
 export const PERSPECTIVE_PROMPT_TEMPLATE = `
@@ -18,13 +20,13 @@ function createPerspectivePrompt(perspective: string): string {
   return PERSPECTIVE_PROMPT_TEMPLATE.replace('<<PERSPECTIVE_PLACEHOLDER>>', perspective);
 }
 
-const archaicPerspectivePrompt = createPerspectivePrompt(ARCHAIC_WORLDVIEW);
-const emotionalPerspectivePrompt = createPerspectivePrompt(EMOTIONAL_WORLDVIEW);
-const socialPerspectivePrompt = createPerspectivePrompt(SOCIAL_WORLDVIEW);
-const rationalPerspectivePrompt = createPerspectivePrompt(RATIONAL_WORLDVIEW);
-const pluralisticPerspectivePrompt = createPerspectivePrompt(PLURALISTIC_WORLDVIEW);
-const narrativeIntegratedPerspectivePrompt = createPerspectivePrompt(NARRATIVE_INTEGRATED_WORLDVIEW);
-const nondualPerspectivePrompt = createPerspectivePrompt(NONDUAL_WORLDVIEW);
+const archaicPerspectivePrompt = createPerspectivePrompt(ARCHAIC_WORLDVIEW_PERSPECTIVE);
+const emotionalPerspectivePrompt = createPerspectivePrompt(EMOTIONAL_WORLDVIEW_PERSPECTIVE);
+const socialPerspectivePrompt = createPerspectivePrompt(SOCIAL_WORLDVIEW_PERSPECTIVE);
+const rationalPerspectivePrompt = createPerspectivePrompt(RATIONAL_WORLDVIEW_PERSPECTIVE);
+const pluralisticPerspectivePrompt = createPerspectivePrompt(PLURALISTIC_WORLDVIEW_PERSPECTIVE);
+const narrativeIntegratedPerspectivePrompt = createPerspectivePrompt(NARRATIVE_INTEGRATED_WORLDVIEW_PERSPECTIVE);
+const nondualPerspectivePrompt = createPerspectivePrompt(NONDUAL_WORLDVIEW_PERSPECTIVE);
 
 // array of prompts
 export const perspectivePrompts = [
