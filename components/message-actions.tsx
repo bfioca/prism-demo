@@ -20,8 +20,8 @@ import {
 import equal from 'fast-deep-equal';
 
 function extractPrismSections(content: string) {
-  const keyAssumptionsMatch = content.match(/1\.\s*Key Assumptions:?\s*([\s\S]*?)(?=2\.\s*Response:?|$)/i);
-  const responseMatch = content.match(/2\.\s*Response:?\s*([\s\S]*?)$/i);
+  const keyAssumptionsMatch = content.match(/\d+\.\s*\*\*Key Assumptions\*\*:?\s*([\s\S]*?)(?=\d+\.\s*\*\*Response\*\*|$)/i);
+  const responseMatch = content.match(/\d+\.\s*\*\*Response\*\*:?\s*([\s\S]*?)$/i);
 
   // Clean up and ensure proper indentation
   const cleanAssumptions = (text?: string) => {
@@ -43,7 +43,7 @@ function extractPrismSections(content: string) {
 
   return {
     keyAssumptions: cleanAssumptions(keyAssumptionsMatch?.[1]),
-    response: responseMatch ? responseMatch[1].trim() : undefined,
+    response: responseMatch?.[1]?.trim(),
   };
 }
 
