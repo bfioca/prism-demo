@@ -12,6 +12,9 @@ Ensure the synthesized response maximizes the priorities of each perspective whi
 and avoiding disproportionately worsening any perspective's objectives. Use the provided inputs as the
 foundation for the synthesis.
 
+## IMPORTANT:
+- always follow the output schema exactly using the markdown format provided. Your answer will be sent to a UI that relies on this format and if it's incorrect it will break the UI.
+
 ## Output Schema:
 1. **List of Key Implicit Assumptions**: Provide the key implicit assumptions about the context that the response relies on.
 2. **Response**: Provide a single, coherent response that reflects the Pareto Optimal integrated priorities of the perspectives.
@@ -41,7 +44,7 @@ Ensure the synthesized response maximizes the priorities of each perspective whi
 The First Pass Response and Mediations have been provided as contextual inputs. Use them to inform your reasoning and incorporate them where they align with Pareto optimality.
 
 ## IMPORTANT:
-- always fillow the output schema exactly using the markdown format provided. Your answer will be sent to a UI that relies on this format and if it's incorrect it will break the UI.
+- always follow the output schema exactly using the markdown format provided. Your answer will be sent to a UI that relies on this format and if it's incorrect it will break the UI.
 
 ## Output Schema:
 1. **Key Assumptions**: Provide the key assumptions that the response relies on.
