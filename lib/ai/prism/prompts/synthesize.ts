@@ -1,3 +1,4 @@
+// This file contains the prompt for synthesizing the perspectives into a single response.
 
 export function multiPerspectiveSynthesisPrompt(
   userMessage: string,

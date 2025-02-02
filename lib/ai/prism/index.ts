@@ -4,7 +4,7 @@ import { Message } from '@/lib/types';
 import { perspectivePrompts } from './prompts/perspective';
 import { multiPerspectiveSynthesisPrompt, finalSynthesisPrompt } from './prompts/synthesize';
 import { conflictPromptMaps } from './prompts/conflict';
-import { WORLDVIEWS } from './prompts/worldviews';
+import { WORLDVIEWS, WORLDVIEW_PERSPECTIVES } from './prompts/worldviews';
 import { multiPerspectiveMediationPrompt } from './prompts/mediations';
 import { generateUUID } from '@/lib/utils';
 import { customModel } from '@/lib/ai';
@@ -82,7 +82,7 @@ export async function processPrismResponse({
 
   let perspectiveResponses: PerspectiveResponse[];
   if (model.apiIdentifier.includes('distill-llama')) {
-    // Sequential execution for rate limited models
+    // Sequential execution for rate limited models like from groq
     perspectiveResponses = [];
     for (let i = 0; i < perspectivePrompts.length; i++) {
       if (i > 0) await delay(5000); // 5 second delay between iterations
@@ -95,7 +95,7 @@ export async function processPrismResponse({
       console.info('Generated text for perspective:', text);
       intermediaryData.perspectives.push({
         id: generateUUID(),
-        perspective: WORLDVIEWS[i],
+        perspective: WORLDVIEW_PERSPECTIVES[i],
         response: text,
         worldviewIndex: i
       });
@@ -214,7 +214,7 @@ export async function processPrismResponse({
 
   let evaluationResponses;
   if (model.apiIdentifier.includes('distill-llama')) {
-    // Sequential execution for grok models
+    // Sequential execution for groq models
     evaluationResponses = [];
     for (const promptMap of conflictPromptMaps) {
       if (evaluationResponses.length > 0) await delay(5000); // 5 second delay between iterations
