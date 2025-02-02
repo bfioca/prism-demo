@@ -16,9 +16,9 @@ interface SuggestedActionsProps {
 function PureSuggestedActions({ chatId, append }: SuggestedActionsProps) {
   const suggestedActions = [
     {
-      title: 'What are the benefits',
-      label: 'of producing and distributing vaccines?',
-      action: 'What are the benefits of producing and distributing vaccines?',
+      title: 'Should the US implement vaccine mandates?',
+      label: 'Give a definitive yes or no',
+      action: 'Should the US implement vaccine mandates? Give a definitive yes or no',
     },
     {
       title: 'Discuss the ethical considerations',
@@ -26,14 +26,14 @@ function PureSuggestedActions({ chatId, append }: SuggestedActionsProps) {
       action: 'Discuss the ethical considerations of implementing AI in healthcare.',
     },
     {
-      title: 'Explain the social impact',
-      label: 'of universal basic income.',
-      action: 'Explain the social impact of universal basic income.',
+      title: 'Should the US implement a universal basic income?',
+      label: 'Give a definitive yes or no',
+      action: 'Should the US implement a universal basic income? Give a definitive yes or no',
     },
     {
-      title: 'Analyze the challenges',
-      label: 'of transitioning to renewable energy.',
-      action: 'Analyze the challenges of transitioning to renewable energy.',
+      title: 'Should the US implement a carbon tax?',
+      label: 'Give a definitive yes or no',
+      action: 'Should the US implement a carbon tax? Give a definitive yes or no',
     },
   ];
 
