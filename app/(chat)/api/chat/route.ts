@@ -38,7 +38,7 @@ import { checkRateLimit } from '@/lib/redis';
 import { generateTitleFromUserMessage } from '../../actions';
 import { processPrismResponse } from '@/lib/ai/prism';
 
-export const maxDuration = 60;
+export const maxDuration = 300; // 5 minutes
 
 const blocksTools: AllowedTools[] = [
   'createDocument',
