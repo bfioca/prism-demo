@@ -45,6 +45,7 @@ interface ProcessPrismParams {
   dataStream: DataStream;
   model: {
     apiIdentifier: string;
+    rateLimited: boolean;
   };
   messages: Message[];
   session: Session | null;
