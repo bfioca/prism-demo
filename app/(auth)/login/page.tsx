@@ -76,7 +76,7 @@ export default function Page() {
           </p>
         </div>
 
-        <div className="w-full overflow-hidden rounded-2xl">
+        <div className="w-full overflow-hidden rounded-2xl px-4">
           <div className="flex flex-col items-center justify-center gap-2 px-4 text-center sm:px-16">
             <p className="text-sm text-gray-500 dark:text-zinc-400 py-6">
               Sign in
