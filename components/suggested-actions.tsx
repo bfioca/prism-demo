@@ -17,8 +17,8 @@ function PureSuggestedActions({ chatId, append }: SuggestedActionsProps) {
   const suggestedActions = [
     {
       title: 'Should the US implement vaccine mandates?',
-      label: 'Give a definitive yes or no',
-      action: 'Should the US implement vaccine mandates? Give a definitive yes or no',
+      label: 'Give a definitive yes or no and explain.',
+      action: 'Should the US implement vaccine mandates? Give a definitive yes or no and explain.',
     },
     {
       title: 'Discuss the ethical considerations',
@@ -26,14 +26,14 @@ function PureSuggestedActions({ chatId, append }: SuggestedActionsProps) {
       action: 'Discuss the ethical considerations of implementing AI in healthcare.',
     },
     {
-      title: 'Should the US implement a universal basic income?',
-      label: 'Give a definitive yes or no',
-      action: 'Should the US implement a universal basic income? Give a definitive yes or no',
+      title: 'Should there be a universal basic income?',
+      label: 'Give a definitive yes or no and explain.',
+      action: 'Should there be a universal basic income? Give a definitive yes or no and explain.',
     },
     {
-      title: 'Should the US implement a carbon tax?',
-      label: 'Give a definitive yes or no',
-      action: 'Should the US implement a carbon tax? Give a definitive yes or no',
+      title: 'Should there be a global tax on carbon emissions?',
+      label: 'Give a definitive yes or no and explain.',
+      action: 'Should there be a global tax on carbon emissions? Give a definitive yes or no and explain.',
     },
   ];
 
