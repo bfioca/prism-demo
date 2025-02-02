@@ -29,7 +29,7 @@ export const models: Array<Model> = [
     label: 'o3 mini',
     apiIdentifier: 'o3-mini',
     description: 'Fast at advanced reasoning',
-    restricted: true,
+    restricted: false,
   },
   {
     id: 'deepseek-ai/DeepSeek-R1',
