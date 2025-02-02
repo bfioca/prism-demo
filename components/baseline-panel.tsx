@@ -9,7 +9,7 @@ import { usePanel } from './panel-context';
 import { Markdown } from './markdown';
 import { useCopyToClipboard } from 'usehooks-ts';
 import { toast } from 'sonner';
-import { CopyIcon } from 'lucide-react';
+import { CopyIcon, SparklesIcon } from 'lucide-react';
 
 export function BaselinePanel() {
   const [baseline, setBaseline] = useState<string>('');
@@ -115,43 +115,69 @@ export function BaselinePanel() {
                 </Button>
               </div>
             </div>
-            <div className="flex-1 overflow-hidden">
-              <div className="h-full overflow-y-auto">
-                <div className="p-6">
-                  {isLoading ? (
-                    <div className="flex items-center justify-center h-32 text-muted-foreground">
-                      <motion.div
-                        animate={{
-                          opacity: [0.5, 1, 0.5],
-                        }}
-                        transition={{
-                          duration: 1.5,
-                          repeat: Infinity,
-                          ease: "easeInOut"
-                        }}
-                      >
-                        Loading baseline response...
-                      </motion.div>
+            <div className="flex-1 overflow-y-auto">
+              <div className="flex flex-col gap-6 py-6">
+                <motion.div
+                  className="w-full mx-auto max-w-3xl px-4"
+                  initial={{ y: 5, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                >
+                  <div className="flex gap-4 w-full">
+                    <div className="size-8 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border bg-background">
+                      <div className="translate-y-px">
+                        <SparklesIcon size={14} />
+                      </div>
                     </div>
-                  ) : baseline ? (
-                    <div className={cn(
-                      "prose prose-sm max-w-none",
-                      "text-foreground",
-                      "dark:prose-invert",
-                      "prose-headings:text-foreground dark:prose-headings:text-foreground",
-                      "prose-h1:text-xl prose-h2:text-lg prose-h3:text-base",
-                      "prose-h1:font-semibold prose-h2:font-semibold prose-h3:font-medium",
-                      "prose-p:text-foreground dark:prose-p:text-foreground",
-                      "prose-strong:text-foreground dark:prose-strong:text-foreground",
-                      "prose-em:text-foreground dark:prose-em:text-foreground"
-                    )}>
-                      <Markdown>{baseline}</Markdown>
+                    <div className="flex flex-col gap-2 w-full">
+                      {isLoading ? (
+                        <div className="flex items-center justify-center h-32 text-muted-foreground">
+                          <motion.div
+                            animate={{
+                              opacity: [0.5, 1, 0.5],
+                            }}
+                            transition={{
+                              duration: 1.5,
+                              repeat: Infinity,
+                              ease: "easeInOut"
+                            }}
+                          >
+                            Loading baseline response...
+                          </motion.div>
+                        </div>
+                      ) : baseline ? (
+                        <div className="flex flex-row gap-2 items-start">
+                          <div className={cn('flex flex-col gap-4')}>
+                            <div className={cn(
+                              "prose prose-sm max-w-none",
+                              "text-foreground",
+                              "dark:prose-invert",
+                              "prose-headings:text-foreground dark:prose-headings:text-foreground",
+                              "prose-h1:text-xl prose-h2:text-lg prose-h3:text-base",
+                              "prose-h1:font-semibold prose-h2:font-semibold prose-h3:font-medium",
+                              "prose-p:text-foreground dark:prose-p:text-foreground",
+                              "prose-strong:text-foreground dark:prose-strong:text-foreground",
+                              "prose-em:text-foreground dark:prose-em:text-foreground"
+                            )}>
+                              <Markdown>{baseline}</Markdown>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center h-32 text-muted-foreground">
+                          No baseline response available
+                        </div>
+                      )}
                     </div>
-                  ) : (
-                    <div className="flex items-center justify-center h-32 text-muted-foreground">
-                      No baseline response available
-                    </div>
-                  )}
+                  </div>
+                </motion.div>
+                <div className="px-6">
+                  <Button
+                    variant="outline"
+                    className="p-2 h-fit dark:hover:bg-zinc-700"
+                    onClick={handleCopy}
+                    disabled={!baseline}>
+                    <CopyIcon size={18} />
+                  </Button>
                 </div>
                 <div className="px-6 pt-4 pb-6 mt-4 border-t border-border/50">
                   <p className="text-sm text-muted-foreground italic">
