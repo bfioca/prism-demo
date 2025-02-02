@@ -37,7 +37,7 @@ export const models: Array<Model> = [
   // },
   {
     id: 'deepseek-r1-distill-llama-70b',
-    label: 'DeepSeek R1',
+    label: 'DeepSeek R1 (distill-llama-70b)',
     apiIdentifier: 'deepseek-r1-distill-llama-70b',
     description: 'For open source reasoning',
     restricted: false,
