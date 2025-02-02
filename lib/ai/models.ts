@@ -57,5 +57,5 @@ export function getModelsForUser(email: string | null | undefined): Array<Model>
   if (isPSLEmail(email)) {
     return models;
   }
-  return models.filter(model => model.id === DEFAULT_MODEL_NAME || model.id === 'deepseek-ai/DeepSeek-R1');
+  return models.filter(model => !model.restricted);
 }
