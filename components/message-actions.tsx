@@ -20,8 +20,8 @@ import {
 import equal from 'fast-deep-equal';
 
 function extractPrismSections(content: string) {
-  const keyAssumptionsMatch = content.match(/\d+\.\s*\*\*Key Assumptions\*\*:?\s*([\s\S]*?)(?=\d+\.\s*\*\*Response\*\*|$)/i);
-  const responseMatch = content.match(/\d+\.\s*\*\*Response\*\*:?\s*([\s\S]*?)$/i);
+  const keyAssumptionsMatch = content.match(/\d+\.\s*(?:\*\*)?Key Assumptions(?:\*\*)?:?\s*(?:\n|\r\n)?([\s\S]*?)(?=\d+\.\s*(?:\*\*)?Response(?:\*\*)?:|$)/i);
+  const responseMatch = content.match(/\d+\.\s*(?:\*\*)?Response(?:\*\*)?:?\s*(?:\n|\r\n)?([\s\S]*?)$/i);
 
   // Clean up and ensure proper indentation
   const cleanAssumptions = (text?: string) => {
@@ -31,11 +31,12 @@ function extractPrismSections(content: string) {
     return text
       .split('\n')
       .map(line => line.trim())
-      .filter(line => line.startsWith('-') || line.startsWith('•'))
+      .filter(line => line.startsWith('-') || line.startsWith('•') || line.startsWith('*'))
       .map(line => {
         // Remove either bullet point type and trim
         if (line.startsWith('-')) return line.substring(1).trim();
         if (line.startsWith('•')) return line.substring(1).trim();
+        if (line.startsWith('*')) return line.substring(1).trim();
         return line;
       })
       .filter(line => line.length > 0);
