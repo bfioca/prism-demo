@@ -81,7 +81,7 @@ export async function processPrismResponse({
   });
 
   let perspectiveResponses: PerspectiveResponse[];
-  if (model.apiIdentifier.includes('distill-llama')) {
+  if (model.rateLimited) {
     // Sequential execution for rate limited models like from groq
     perspectiveResponses = [];
     for (let i = 0; i < perspectivePrompts.length; i++) {
@@ -144,7 +144,7 @@ export async function processPrismResponse({
   const parallelModes = ['baseline', 'synthesis'];
   let baselineResponse: string, firstPassResponse: string;
 
-  if (model.apiIdentifier.includes('distill-llama')) {
+  if (model.rateLimited) {
     // Sequential execution for rate limited models
     baselineResponse = await generateText({
       model: customModel(model.apiIdentifier),
@@ -213,7 +213,7 @@ export async function processPrismResponse({
   dataStream.writeData({ type: 'thinking', content: '(3/5) Evaluating the first pass response...' });
 
   let evaluationResponses;
-  if (model.apiIdentifier.includes('distill-llama')) {
+  if (model.rateLimited) {
     // Sequential execution for groq models
     evaluationResponses = [];
     for (const promptMap of conflictPromptMaps) {
@@ -264,7 +264,7 @@ export async function processPrismResponse({
   console.info('Evaluation responses:', evaluationResponses);
   dataStream.writeData({ type: 'thinking', content: '(4/5) Mediating the responses...' });
 
-  if (model.apiIdentifier.includes('distill-llama')) {
+  if (model.rateLimited) {
     await delay(15000);
   }
 
@@ -301,7 +301,7 @@ export async function processPrismResponse({
   );
   console.info('Final synthesis prompt:', finalPrompt);
 
-  if (model.apiIdentifier.includes('distill-llama')) {
+  if (model.rateLimited) {
     await delay(15000);
   }
 

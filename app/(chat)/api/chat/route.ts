@@ -73,7 +73,6 @@ export async function POST(request: Request) {
   }
 
   // Get IP address from headers
-  const headersList = headers();
   const forwardedFor = request.headers.get('x-forwarded-for');
   const ip = forwardedFor ? forwardedFor.split(',')[0] : '127.0.0.1';
 
@@ -124,9 +123,10 @@ export async function POST(request: Request) {
 
   if (mode === 'prism') {
     return createDataStreamResponse({
-      onError: (error) => {
+      onError: (error: unknown) => {
         console.error('Error:', error);
-        return 'Error ' + error;
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return errorMessage;
       },
       execute: async (dataStream) => {
         const result = await processPrismResponse({
@@ -141,6 +141,7 @@ export async function POST(request: Request) {
       },
     });
   } else {
+    // This is the chat mode from the original source code - selectable in mode-selector.tsx
     return createDataStreamResponse({
       execute: (dataStream) => {
         const result = streamText({

@@ -7,6 +7,7 @@ export interface Model {
   apiIdentifier: string;
   description: string;
   restricted: boolean;
+  rateLimited: boolean;
 }
 
 export const models: Array<Model> = [
@@ -14,42 +15,42 @@ export const models: Array<Model> = [
     id: 'gpt-4o-mini',
     label: 'GPT 4o mini',
     apiIdentifier: 'gpt-4o-mini',
-    description: 'Small model for fast, lightweight tasks',
+    description: 'For fast default LLM output',
     restricted: false,
+    rateLimited: false,
   },
   {
     id: 'gpt-4o',
     label: 'GPT 4o',
     apiIdentifier: 'gpt-4o',
-    description: 'For complex, multi-step tasks',
+    description: 'For default LLM output',
     restricted: true,
+    rateLimited: false,
   },
   {
     id: 'o3-mini',
     label: 'o3 mini',
     apiIdentifier: 'o3-mini',
-    description: 'Fast at advanced reasoning',
+    description: 'For OpenAI reasoning',
     restricted: false,
-  },
-  {
-    id: 'deepseek-ai/DeepSeek-R1',
-    label: 'DeepSeek R1',
-    apiIdentifier: 'deepseek-ai/DeepSeek-R1',
-    description: 'For fast reasoning',
-    restricted: false
+    rateLimited: false,
   },
   // {
-  //   id: 'deepseek-r1-distill-llama-70b',
+  //   id: 'deepseek-ai/DeepSeek-R1',
   //   label: 'DeepSeek R1',
-  //   apiIdentifier: 'deepseek-r1-distill-llama-70b',
-  //   description: 'For fast reasoning',
+  //   apiIdentifier: 'deepseek-ai/DeepSeek-R1',
+  //   description: 'For open source reasoning',
+  //   restricted: false,
+  //   rateLimited: false,
   // },
-  // {
-  //   id: 'o1-mini',
-  //   label: 'o1 mini',
-  //   apiIdentifier: 'o1-mini',
-  //   description: 'Faster at reasoning',
-  // },
+  {
+    id: 'deepseek-r1-distill-llama-70b',
+    label: 'DeepSeek R1',
+    apiIdentifier: 'deepseek-r1-distill-llama-70b',
+    description: 'For open source reasoning',
+    restricted: false,
+    rateLimited: false,
+  },
   // {
   //   id: 'o1',
   //   label: 'o1',
