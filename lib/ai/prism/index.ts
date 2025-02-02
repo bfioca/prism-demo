@@ -1,6 +1,6 @@
 import { generateText, smoothStream, streamText } from 'ai';
 import { Session } from 'next-auth';
-import { Message } from '@/lib/types';
+import { Message, DataStream, PerspectiveResponse, PerspectiveData, IntermediaryData, ProcessPrismParams } from '@/lib/types';
 import { perspectivePrompts } from './prompts/perspective';
 import { multiPerspectiveSynthesisPrompt, finalSynthesisPrompt } from './prompts/synthesize';
 import { conflictPromptMaps } from './prompts/conflict';
@@ -12,46 +12,6 @@ import { saveMessages } from '@/lib/db/queries';
 
 // Helper function for delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-interface DataStream {
-  writeData: (delta: { type: 'thinking' | 'details' | string; content: string | null }) => void;
-}
-
-interface PerspectiveResponse {
-  text: string;
-  worldview: {
-    name: string;
-    index: number;
-  };
-}
-
-interface PerspectiveData {
-  id: string;
-  perspective: string;
-  response: string;
-  worldviewIndex: number;
-}
-
-interface IntermediaryData {
-  baselineResponse: string;
-  perspectives: PerspectiveData[];
-  firstPassSynthesis: string;
-  evaluations: PerspectiveData[];
-  mediation: string;
-  isPrismMode: boolean;
-}
-
-interface ProcessPrismParams {
-  dataStream: DataStream;
-  model: {
-    apiIdentifier: string;
-    rateLimited: boolean;
-  };
-  messages: Message[];
-  session: Session | null;
-  userMessage: Message;
-  chatId: string;
-}
 
 export async function processPrismResponse({
   dataStream,

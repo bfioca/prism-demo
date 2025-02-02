@@ -1,14 +1,6 @@
 // Define your models here.
 import { isPSLEmail } from '@/lib/utils';
-
-export interface Model {
-  id: string;
-  label: string;
-  apiIdentifier: string;
-  description: string;
-  restricted: boolean;
-  rateLimited: boolean;
-}
+import type { Model } from '@/lib/types';
 
 export const models: Array<Model> = [
   {

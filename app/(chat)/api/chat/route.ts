@@ -27,8 +27,7 @@ import {
   saveMessages,
   saveSuggestions,
 } from '@/lib/db/queries';
-import type { Suggestion } from '@/lib/db/schema';
-import type { Message } from '@/lib/types';
+import type { Message, AllowedTools, DocumentSuggestion } from '@/lib/types';
 import {
   generateUUID,
   getMostRecentUserMessage,
@@ -40,12 +39,6 @@ import { generateTitleFromUserMessage } from '../../actions';
 import { processPrismResponse } from '@/lib/ai/prism';
 
 export const maxDuration = 60;
-
-type AllowedTools =
-  | 'createDocument'
-  | 'updateDocument'
-  | 'requestSuggestions'
-  | 'getWeather';
 
 const blocksTools: AllowedTools[] = [
   'createDocument',
@@ -387,7 +380,7 @@ export async function POST(request: Request) {
                 }
 
                 const suggestions: Array<
-                  Omit<Suggestion, 'userId' | 'createdAt' | 'documentCreatedAt'>
+                  Omit<DocumentSuggestion, 'userId' | 'createdAt' | 'documentCreatedAt'>
                 > = [];
 
                 const { elementStream } = streamObject({
