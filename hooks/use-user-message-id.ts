@@ -4,7 +4,7 @@ import useSWR from 'swr';
 
 export function useUserMessageId() {
   const { data: userMessageIdFromServer, mutate: setUserMessageIdFromServer } =
-    useSWR('userMessageIdFromServer', null);
+    useSWR('userMessageIdFromServer', undefined);
 
   return { userMessageIdFromServer, setUserMessageIdFromServer };
 }

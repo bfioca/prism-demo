@@ -75,35 +75,49 @@ export function MessageEditor({
           disabled={isSubmitting}
           onClick={async () => {
             setIsSubmitting(true);
-            const messageId = userMessageIdFromServer ?? message.id;
 
-            if (!messageId) {
-              toast.error('Something went wrong, please try again!');
-              setIsSubmitting(false);
-              return;
-            }
+            try {
+              // For streaming messages, just update the UI state
+              if (!message.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+                setMessages((messages) => {
+                  const index = messages.findIndex((m) => m.id === message.id);
+                  if (index !== -1) {
+                    const updatedMessage = {
+                      ...message,
+                      content: draftContent,
+                    };
+                    return [...messages.slice(0, index), updatedMessage];
+                  }
+                  return messages;
+                });
+              } else {
+                // For persisted messages, do the server operations
+                await deleteTrailingMessages({
+                  id: message.id,
+                });
 
-            await deleteTrailingMessages({
-              id: messageId,
-            });
-
-            setMessages((messages) => {
-              const index = messages.findIndex((m) => m.id === message.id);
-
-              if (index !== -1) {
-                const updatedMessage = {
-                  ...message,
-                  content: draftContent,
-                };
-
-                return [...messages.slice(0, index), updatedMessage];
+                setMessages((messages) => {
+                  const index = messages.findIndex((m) => m.id === message.id);
+                  if (index !== -1) {
+                    const updatedMessage = {
+                      ...message,
+                      content: draftContent,
+                    };
+                    return [...messages.slice(0, index), updatedMessage];
+                  }
+                  return messages;
+                });
               }
 
-              return messages;
-            });
-
-            setMode('view');
-            reload();
+              // Always set view mode and reload to continue the conversation
+              setMode('view');
+              reload();
+            } catch (error) {
+              console.error('Error updating message:', error);
+              toast.error('Something went wrong, please try again!');
+            } finally {
+              setIsSubmitting(false);
+            }
           }}
         >
           {isSubmitting ? 'Sending...' : 'Send'}
