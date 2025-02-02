@@ -7,14 +7,23 @@ import { CrossIcon } from './icons';
 import { cn } from '@/lib/utils';
 import { usePanel } from './panel-context';
 import { Markdown } from './markdown';
+import { useCopyToClipboard } from 'usehooks-ts';
+import { toast } from 'sonner';
+import { CopyIcon } from 'lucide-react';
 
 export function BaselinePanel() {
   const [baseline, setBaseline] = useState<string>('');
   const [messageId, setMessageId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const { activePanel, setActivePanel } = usePanel();
+  const [_, copyToClipboard] = useCopyToClipboard();
 
   const isOpen = activePanel === 'baseline';
+
+  const handleCopy = async () => {
+    await copyToClipboard(baseline);
+    toast.success('Copied to clipboard!');
+  };
 
   const fetchMessageBaseline = async (messageId: string) => {
     try {
@@ -86,14 +95,25 @@ export function BaselinePanel() {
           <div className="flex flex-col h-full">
             <div className="flex-none flex justify-between items-center px-6 py-4 border-b border-border/50 bg-background/50">
               <h3 className="font-semibold text-xl text-foreground">Baseline Response</h3>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setActivePanel(null)}
-                className="hover:bg-destructive/10 hover:text-destructive"
-              >
-                <CrossIcon size={16} />
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleCopy}
+                  disabled={!baseline}
+                  className="hover:bg-primary/10 hover:text-primary"
+                >
+                  <CopyIcon size={16} />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setActivePanel(null)}
+                  className="hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <CrossIcon size={16} />
+                </Button>
+              </div>
             </div>
             <div className="flex-1 overflow-hidden">
               <div className="h-full overflow-y-auto">

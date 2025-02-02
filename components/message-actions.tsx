@@ -107,7 +107,7 @@ export function PureMessageActions({
 
   return (
     <TooltipProvider delayDuration={0}>
-      <div className="flex flex-row gap-2">
+      <div className="flex flex-row flex-wrap gap-2 max-w-[calc(100vw-2rem)]">
         {!isReadonly && (
           <>
             <Tooltip>

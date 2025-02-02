@@ -15,7 +15,7 @@ export function RightPanel({ children }: RightPanelProps) {
   return (
     <motion.div
       animate={{
-        width: isOpen ? 600 : 0,
+        width: isOpen ? "min(600px, 100vw)" : 0,
       }}
       transition={{
         duration: 0.3,
@@ -23,15 +23,16 @@ export function RightPanel({ children }: RightPanelProps) {
       }}
       className={cn(
         "flex-none overflow-hidden border-l border-border/50 bg-background/50 backdrop-blur-sm relative",
-        !isOpen && "border-l-0 w-0"
+        !isOpen && "border-l-0 w-0",
+        "max-w-full" // Ensure it never overflows viewport
       )}
       style={{
-        width: isOpen ? 600 : 0
+        width: isOpen ? "min(600px, 100vw)" : 0
       }}
     >
       <div className={cn(
         "h-full transition-opacity duration-300 relative",
-        isOpen ? "opacity-100 overflow" : "opacity-0"
+        isOpen ? "opacity-100" : "opacity-0"
       )}>
         {children}
       </div>
