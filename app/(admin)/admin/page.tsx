@@ -8,6 +8,7 @@ import { columns } from './columns';
 import { UserStats, ChatStats, MessageStats } from './types';
 import { Users, MessageSquare, MessagesSquare } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default function AdminDashboard() {
   const [userStats, setUserStats] = useState<UserStats | null>(null);
@@ -57,22 +58,24 @@ export default function AdminDashboard() {
         <div className="flex items-center justify-between mb-12">
           <div className="space-y-1">
             <div className="flex items-center gap-4 mb-4">
-              <Image
-                src="/images/logo-text.svg"
-                alt="Logo"
-                width={120}
-                height={40}
-                className="block dark:hidden"
-                priority
-              />
-              <Image
-                src="/images/logo-white-text.svg"
-                alt="Logo"
-                width={120}
-                height={40}
-                className="hidden dark:block"
-                priority
-              />
+              <Link href="/" className="transition-opacity hover:opacity-75">
+                <Image
+                  src="/images/logo-text.svg"
+                  alt="Logo"
+                  width={120}
+                  height={40}
+                  className="block dark:hidden"
+                  priority
+                />
+                <Image
+                  src="/images/logo-white-text.svg"
+                  alt="Logo"
+                  width={120}
+                  height={40}
+                  className="hidden dark:block"
+                  priority
+                />
+              </Link>
             </div>
             <h1 className="text-4xl mb-2 font-bold tracking-tight bg-gradient-to-r from-[#3765D2] via-[#37D1AC] to-[#7444C7] bg-clip-text text-transparent">
               Admin Dashboard
