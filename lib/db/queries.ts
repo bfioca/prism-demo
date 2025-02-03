@@ -1,9 +1,10 @@
 import 'server-only';
 
 import { genSaltSync, hashSync } from 'bcrypt-ts';
-import { and, asc, desc, eq, gt, gte } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, gte, count, max, min } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
+import { subDays } from 'date-fns';
 
 import {
   user,
@@ -328,6 +329,142 @@ export async function updateChatVisiblityById({
     return await db.update(chat).set({ visibility }).where(eq(chat.id, chatId));
   } catch (error) {
     console.error('Failed to update chat visibility in database');
+    throw error;
+  }
+}
+
+export async function getUserStats() {
+  try {
+    // Get total users
+    const totalUsers = await db.select({ count: count() }).from(user);
+
+    // Get users active today
+    const activeToday = await db
+      .select({ userId: chat.userId })
+      .from(message)
+      .leftJoin(chat, eq(message.chatId, chat.id))
+      .where(gte(message.createdAt, new Date(new Date().setHours(0, 0, 0, 0))))
+      .groupBy(chat.userId);
+
+    // Get users active this week
+    const activeThisWeek = await db
+      .select({ userId: chat.userId })
+      .from(message)
+      .leftJoin(chat, eq(message.chatId, chat.id))
+      .where(gte(message.createdAt, subDays(new Date(), 7)))
+      .groupBy(chat.userId);
+
+    return {
+      totalCount: totalUsers[0].count,
+      activeToday: activeToday.length,
+      activeThisWeek: activeThisWeek.length,
+    };
+  } catch (error) {
+    console.error('Failed to get user stats from database');
+    throw error;
+  }
+}
+
+export async function getMessageStats() {
+  try {
+    // Get total messages
+    const totalMessages = await db.select({ count: count() }).from(message);
+
+    // Get messages from today
+    const todayMessages = await db
+      .select({ count: count() })
+      .from(message)
+      .where(gte(message.createdAt, new Date(new Date().setHours(0, 0, 0, 0))));
+
+    // Get unique users who have sent messages
+    const uniqueUsers = await db
+      .select({ userId: chat.userId })
+      .from(message)
+      .leftJoin(chat, eq(message.chatId, chat.id))
+      .groupBy(chat.userId);
+
+    const averagePerUser = uniqueUsers.length > 0
+      ? Number((totalMessages[0].count / uniqueUsers.length).toFixed(1))
+      : 0;
+
+    return {
+      totalCount: totalMessages[0].count || 0,
+      todayCount: todayMessages[0].count || 0,
+      averagePerUser,
+    };
+  } catch (error) {
+    console.error('Failed to get message stats from database');
+    throw error;
+  }
+}
+
+export async function getAllMessages() {
+  try {
+    return await db
+      .select({
+        id: message.id,
+        content: message.content,
+        createdAt: message.createdAt,
+        chatId: message.chatId,
+        role: message.role,
+        userEmail: user.email,
+      })
+      .from(message)
+      .leftJoin(chat, eq(message.chatId, chat.id))
+      .leftJoin(user, eq(chat.userId, user.id))
+      .orderBy(desc(message.createdAt));
+  } catch (error) {
+    console.error('Failed to get all messages from database');
+    throw error;
+  }
+}
+
+export async function getChatStats() {
+  try {
+    // Get total chats
+    const totalChats = await db.select({ count: count() }).from(chat);
+
+    // Get chats created today
+    const todayChats = await db
+      .select({ count: count() })
+      .from(chat)
+      .where(gte(chat.createdAt, new Date(new Date().setHours(0, 0, 0, 0))));
+
+    // Get unique users with chats for average calculation
+    const uniqueUsers = await db
+      .select({ userId: chat.userId })
+      .from(chat)
+      .groupBy(chat.userId);
+
+    const averagePerUser = uniqueUsers.length > 0
+      ? Number((totalChats[0].count / uniqueUsers.length).toFixed(1))
+      : 0;
+
+    return {
+      totalCount: totalChats[0].count || 0,
+      todayCount: todayChats[0].count || 0,
+      averagePerUser,
+    };
+  } catch (error) {
+    console.error('Failed to get chat stats from database');
+    throw error;
+  }
+}
+
+export async function getRecentUsers() {
+  try {
+    return await db
+      .select({
+        id: user.id,
+        email: user.email,
+        createdAt: min(chat.createdAt),
+      })
+      .from(user)
+      .leftJoin(chat, eq(chat.userId, user.id))
+      .groupBy(user.id, user.email)
+      .orderBy(desc(min(chat.createdAt)));
+  } catch (error) {
+    console.error('Failed to get recent users from database');
     throw error;
   }
 }
