@@ -1,9 +1,10 @@
 import 'server-only';
 
 import { genSaltSync, hashSync } from 'bcrypt-ts';
-import { and, asc, desc, eq, gt, gte } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, gte, count, max, min, or, like } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
+import { subDays } from 'date-fns';
 
 import {
   user,
@@ -42,7 +43,7 @@ export async function createUser(email: string, password: string) {
   try {
     const [newUser] = await db.insert(user)
       .values({ email, password: hash })
-      .returning({ id: user.id });
+      .returning({ id: user.id, admin: user.admin });
     return newUser;
   } catch (error) {
     console.error('Failed to create user in database');
@@ -328,6 +329,166 @@ export async function updateChatVisiblityById({
     return await db.update(chat).set({ visibility }).where(eq(chat.id, chatId));
   } catch (error) {
     console.error('Failed to update chat visibility in database');
+    throw error;
+  }
+}
+
+export async function getUserStats() {
+  try {
+    // Get total users
+    const totalUsers = await db.select({ count: count() }).from(user);
+
+    // Get users active today
+    const activeToday = await db
+      .select({ userId: chat.userId })
+      .from(message)
+      .leftJoin(chat, eq(message.chatId, chat.id))
+      .where(gte(message.createdAt, new Date(new Date().setHours(0, 0, 0, 0))))
+      .groupBy(chat.userId);
+
+    // Get users active this week
+    const activeThisWeek = await db
+      .select({ userId: chat.userId })
+      .from(message)
+      .leftJoin(chat, eq(message.chatId, chat.id))
+      .where(gte(message.createdAt, subDays(new Date(), 7)))
+      .groupBy(chat.userId);
+
+    return {
+      totalCount: totalUsers[0].count,
+      activeToday: activeToday.length,
+      activeThisWeek: activeThisWeek.length,
+    };
+  } catch (error) {
+    console.error('Failed to get user stats from database');
+    throw error;
+  }
+}
+
+export async function getChatStats() {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const weekAgo = subDays(today, 7);
+
+    const [totalCount] = await db
+      .select({ value: count() })
+      .from(chat);
+
+    const [todayCount] = await db
+      .select({ value: count() })
+      .from(chat)
+      .where(gte(chat.createdAt, today));
+
+    const [weekCount] = await db
+      .select({ value: count() })
+      .from(chat)
+      .where(gte(chat.createdAt, weekAgo));
+
+    const [userCount] = await db
+      .select({ value: count() })
+      .from(user);
+
+    return {
+      totalCount: totalCount.value,
+      todayCount: todayCount.value,
+      weekCount: weekCount.value,
+      averagePerUser: userCount.value ? totalCount.value / userCount.value : 0,
+    };
+  } catch (error) {
+    console.error('Failed to get chat stats from database');
+    throw error;
+  }
+}
+
+export async function getMessageStats() {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const weekAgo = subDays(today, 7);
+
+    const [totalCount] = await db
+      .select({ value: count() })
+      .from(message);
+
+    const [todayCount] = await db
+      .select({ value: count() })
+      .from(message)
+      .where(gte(message.createdAt, today));
+
+    const [weekCount] = await db
+      .select({ value: count() })
+      .from(message)
+      .where(gte(message.createdAt, weekAgo));
+
+    const [userCount] = await db
+      .select({ value: count() })
+      .from(user);
+
+    return {
+      totalCount: totalCount.value,
+      todayCount: todayCount.value,
+      weekCount: weekCount.value,
+      averagePerUser: userCount.value ? totalCount.value / userCount.value : 0,
+    };
+  } catch (error) {
+    console.error('Failed to get message stats from database');
+    throw error;
+  }
+}
+
+export async function getAllMessages() {
+  try {
+    return await db
+      .select({
+        id: message.id,
+        content: message.content,
+        createdAt: message.createdAt,
+        chatId: message.chatId,
+        role: message.role,
+        userEmail: user.email,
+      })
+      .from(message)
+      .leftJoin(chat, eq(message.chatId, chat.id))
+      .leftJoin(user, eq(chat.userId, user.id))
+      .orderBy(desc(message.createdAt));
+  } catch (error) {
+    console.error('Failed to get all messages from database');
+    throw error;
+  }
+}
+
+export async function getRecentUsers() {
+  try {
+    return await db
+      .select({
+        id: user.id,
+        email: user.email,
+        createdAt: min(chat.createdAt),
+      })
+      .from(user)
+      .leftJoin(chat, eq(chat.userId, user.id))
+      .groupBy(user.id, user.email)
+      .orderBy(desc(min(chat.createdAt)));
+  } catch (error) {
+    console.error('Failed to get recent users from database');
+    throw error;
+  }
+}
+
+export async function updatePSLUsersToAdmin() {
+  try {
+    return await db
+      .update(user)
+      .set({ admin: true })
+      .where(
+        or(
+          like(user.email, '%@pioneersquarelabs.com'),
+          like(user.email, '%@psl.com')
+        )
+      );
+  } catch (error) {
+    console.error('Failed to update PSL users to admin');
     throw error;
   }
 }

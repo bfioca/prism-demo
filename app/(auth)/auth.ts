@@ -4,11 +4,24 @@ import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 
 import { getUser, createUser } from '@/lib/db/queries';
+import { User as DBUser } from '@/lib/db/schema';
 
 import { authConfig } from './auth.config';
 
-interface ExtendedSession extends Session {
-  user: User;
+declare module 'next-auth' {
+  interface User {
+    admin?: boolean;
+  }
+  interface Session {
+    user: User & {
+      id: string;
+      admin?: boolean;
+    };
+  }
+  interface JWT {
+    id: string;
+    admin?: boolean;
+  }
 }
 
 // Edge-compatible random string generation
@@ -43,6 +56,7 @@ export const {
           id: user.id,
           email: user.email,
           name: user.email.split('@')[0], // Add a default name
+          admin: user.admin,
         };
       },
     }),
@@ -64,9 +78,12 @@ export const {
             const randomPassword = generateRandomString();
             const newUser = await createUser(email, randomPassword);
             user.id = newUser.id;
+            user.admin = newUser.admin;
           } else {
             user.id = existingUser.id;
+            user.admin = existingUser.admin;
           }
+          console.log('Updated user object:', user);
           return true;
         } catch (error) {
           console.error('Error in signIn callback:', error);
@@ -78,12 +95,14 @@ export const {
     async jwt({ token, user, account, trigger }) {
       if (user) {
         token.id = user.id;
+        token.admin = user.admin;
       }
       return token;
     },
-    async session({ session, token }: { session: ExtendedSession; token: any }) {
+    async session({ session, token }: { session: Session; token: any }) {
       if (token) {
         session.user.id = token.id;
+        session.user.admin = (token as { admin?: boolean }).admin;
       }
       return session;
     },

@@ -2,6 +2,7 @@
 
 import { startTransition, useMemo, useOptimistic, useState } from 'react';
 import { useSession } from 'next-auth/react';
+import useSWR from 'swr';
 
 import { saveModelId } from '@/app/(chat)/actions';
 import { Button } from '@/components/ui/button';
@@ -27,10 +28,19 @@ export function ModelSelector({
   const [optimisticModelId, setOptimisticModelId] =
     useOptimistic(selectedModelId);
   const { data: session } = useSession();
+  const { data: models = [] } = useSWR(
+    session?.user ? ['models', session.user] : null,
+    () => getModelsForUser(session?.user),
+    {
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      refreshInterval: 1000, // Revalidate every second while the component is mounted
+    }
+  );
 
   const availableModels = useMemo(
-    () => getModelsForUser(session?.user?.email),
-    [session?.user?.email]
+    () => models,
+    [models]
   );
 
   const selectedModel = useMemo(

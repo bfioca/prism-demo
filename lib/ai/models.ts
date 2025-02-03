@@ -1,5 +1,5 @@
 // Define your models here.
-import { isPSLEmail } from '@/lib/utils';
+import { isAdmin } from '@/lib/utils';
 import type { Model } from '@/lib/types';
 
 export const models: Array<Model> = [
@@ -53,8 +53,8 @@ export const models: Array<Model> = [
 
 export const DEFAULT_MODEL_NAME: string = 'gpt-4o-mini';
 
-export function getModelsForUser(email: string | null | undefined): Array<Model> {
-  if (isPSLEmail(email)) {
+export function getModelsForUser(user: { admin?: boolean } | null | undefined): Array<Model> {
+  if (isAdmin(user)) {
     return models;
   }
   return models.filter(model => !model.restricted);
