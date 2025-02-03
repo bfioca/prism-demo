@@ -94,15 +94,27 @@ export const {
     },
     async jwt({ token, user, account, trigger }) {
       if (user) {
-        token.id = user.id;
-        token.admin = user.admin;
+        console.log('User in jwt callback:', user);
+        // Preserve existing token data and add/update user fields
+        return {
+          ...token,
+          id: user.id,
+          admin: user.admin,
+        };
       }
       return token;
     },
     async session({ session, token }: { session: Session; token: any }) {
       if (token) {
-        session.user.id = token.id;
-        session.user.admin = (token as { admin?: boolean }).admin;
+        console.log('Token in session callback:', token);
+        return {
+          ...session,
+          user: {
+            ...session.user,
+            id: token.id,
+            admin: token.admin,
+          },
+        };
       }
       return session;
     },
