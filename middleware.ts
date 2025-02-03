@@ -33,10 +33,13 @@ export async function middleware(request: NextRequest) {
 
   // Check if the path starts with /admin
   if (request.nextUrl.pathname.startsWith('/admin')) {
-    // Check if the email is from pioneersquarelabs.com
-    if (!token.email?.endsWith('@pioneersquarelabs.com')) {
+    console.log('Admin check - token:', token);
+    // Check if user is an admin
+    if (!token?.admin) {
+      console.log('Access denied - user is not admin');
       return NextResponse.redirect(new URL('/', request.url));
     }
+    console.log('Access granted - user is admin');
   }
 
   return NextResponse.next();

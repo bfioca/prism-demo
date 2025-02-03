@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { genSaltSync, hashSync } from 'bcrypt-ts';
-import { and, asc, desc, eq, gt, gte, count, max, min } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, gte, count, max, min, or, like } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { subDays } from 'date-fns';
@@ -43,7 +43,7 @@ export async function createUser(email: string, password: string) {
   try {
     const [newUser] = await db.insert(user)
       .values({ email, password: hash })
-      .returning({ id: user.id });
+      .returning({ id: user.id, admin: user.admin });
     return newUser;
   } catch (error) {
     console.error('Failed to create user in database');
@@ -472,6 +472,23 @@ export async function getRecentUsers() {
       .orderBy(desc(min(chat.createdAt)));
   } catch (error) {
     console.error('Failed to get recent users from database');
+    throw error;
+  }
+}
+
+export async function updatePSLUsersToAdmin() {
+  try {
+    return await db
+      .update(user)
+      .set({ admin: true })
+      .where(
+        or(
+          like(user.email, '%@pioneersquarelabs.com'),
+          like(user.email, '%@psl.com')
+        )
+      );
+  } catch (error) {
+    console.error('Failed to update PSL users to admin');
     throw error;
   }
 }

@@ -224,7 +224,7 @@ export function getMessageIdFromAnnotations(message: Message) {
   return annotation.messageIdFromServer;
 }
 
-export function isPSLEmail(email: string | null | undefined): boolean {
-  if (!email) return false;
-  return email.endsWith('@psl.com') || email.endsWith('@pioneersquarelabs.com');
+export function isAdmin(user: { admin?: boolean } | null | undefined): boolean {
+  if (!user) return false;
+  return user.admin === true;
 }
