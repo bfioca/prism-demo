@@ -92,9 +92,12 @@ export function PureMessageActions({
     return null;
 
   const { keyAssumptions } = extractPrismSections(message.content as string);
-  const isPrismResponse = message.prism_data !== undefined ||
-    (message.content as string)?.includes('1. **Key Assumptions**') || // Prism responses always have this structure
-    (message.content as string)?.includes('Getting responses from each perspective'); // Prism mode indicator
+  // this doesn't work so let's just force it for now
+  // const isPrismResponse = message.prism_data !== undefined ||
+  //   (message.content as string)?.includes('1. **Key Assumptions**') || // Prism responses always have this structure
+  //   (message.content as string)?.includes('Getting responses from each perspective'); // Prism mode indicator
+
+  const isPrismResponse = true;
 
   // Debug logging
   console.log('MessageActions:', {
