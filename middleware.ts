@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getToken } from 'next-auth/jwt';
+import { auth } from './app/(auth)/auth';
 
 export async function middleware(request: NextRequest) {
-  const token = await getToken({
-    req: request,
-    secret: process.env.AUTH_SECRET
+  const session = await auth();
+
+  console.log('Middleware session check:', {
+    path: request.nextUrl.pathname,
+    hasSession: !!session,
+    sessionData: session
   });
 
   // Allow public routes
@@ -20,22 +23,23 @@ export async function middleware(request: NextRequest) {
   }
 
   // Redirect to login if not authenticated
-  if (!token) {
+  if (!session?.user) {
+    console.log('No valid session found, redirecting to login');
     const loginUrl = new URL('/login', request.url);
     return NextResponse.redirect(loginUrl);
   }
 
   // Redirect to home if authenticated user tries to access auth pages
-  if (token && (request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/register'))) {
+  if (session && (request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/register'))) {
     const homeUrl = new URL('/', request.url);
     return NextResponse.redirect(homeUrl);
   }
 
   // Check if the path starts with /admin
   if (request.nextUrl.pathname.startsWith('/admin')) {
-    console.log('Admin check - token:', token);
+    console.log('Admin check - session:', session);
     // Check if user is an admin
-    if (!token?.admin) {
+    if (!session.user.admin) {
       console.log('Access denied - user is not admin');
       return NextResponse.redirect(new URL('/', request.url));
     }
