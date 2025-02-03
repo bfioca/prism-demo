@@ -146,6 +146,10 @@ export default function AdminDashboard() {
                     <p className="text-2xl text-foreground/90">{chatStats?.todayCount}</p>
                   </div>
                   <div>
+                    <p className="text-sm text-muted-foreground">This Week</p>
+                    <p className="text-2xl text-foreground/90">{chatStats?.weekCount}</p>
+                  </div>
+                  <div>
                     <p className="text-sm text-muted-foreground">Avg/User</p>
                     <p className="text-2xl text-foreground/90">{chatStats?.averagePerUser?.toFixed(1)}</p>
                   </div>
@@ -177,6 +181,10 @@ export default function AdminDashboard() {
                   <div>
                     <p className="text-sm text-muted-foreground">Today</p>
                     <p className="text-2xl text-foreground/90">{messageStats?.todayCount}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">This Week</p>
+                    <p className="text-2xl text-foreground/90">{messageStats?.weekCount}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Avg/User</p>

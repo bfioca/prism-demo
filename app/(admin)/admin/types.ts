@@ -7,12 +7,14 @@ export interface UserStats {
 export interface ChatStats {
   totalCount: number;
   todayCount: number;
+  weekCount: number;
   averagePerUser: number;
 }
 
 export interface MessageStats {
   totalCount: number;
   todayCount: number;
+  weekCount: number;
   averagePerUser: number;
 }
 

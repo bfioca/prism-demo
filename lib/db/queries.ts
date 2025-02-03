@@ -365,32 +365,71 @@ export async function getUserStats() {
   }
 }
 
-export async function getMessageStats() {
+export async function getChatStats() {
   try {
-    // Get total messages
-    const totalMessages = await db.select({ count: count() }).from(message);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const weekAgo = subDays(today, 7);
 
-    // Get messages from today
-    const todayMessages = await db
-      .select({ count: count() })
-      .from(message)
-      .where(gte(message.createdAt, new Date(new Date().setHours(0, 0, 0, 0))));
+    const [totalCount] = await db
+      .select({ value: count() })
+      .from(chat);
 
-    // Get unique users who have sent messages
-    const uniqueUsers = await db
-      .select({ userId: chat.userId })
-      .from(message)
-      .leftJoin(chat, eq(message.chatId, chat.id))
-      .groupBy(chat.userId);
+    const [todayCount] = await db
+      .select({ value: count() })
+      .from(chat)
+      .where(gte(chat.createdAt, today));
 
-    const averagePerUser = uniqueUsers.length > 0
-      ? Number((totalMessages[0].count / uniqueUsers.length).toFixed(1))
-      : 0;
+    const [weekCount] = await db
+      .select({ value: count() })
+      .from(chat)
+      .where(gte(chat.createdAt, weekAgo));
+
+    const [userCount] = await db
+      .select({ value: count() })
+      .from(user);
 
     return {
-      totalCount: totalMessages[0].count || 0,
-      todayCount: todayMessages[0].count || 0,
-      averagePerUser,
+      totalCount: totalCount.value,
+      todayCount: todayCount.value,
+      weekCount: weekCount.value,
+      averagePerUser: userCount.value ? totalCount.value / userCount.value : 0,
+    };
+  } catch (error) {
+    console.error('Failed to get chat stats from database');
+    throw error;
+  }
+}
+
+export async function getMessageStats() {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const weekAgo = subDays(today, 7);
+
+    const [totalCount] = await db
+      .select({ value: count() })
+      .from(message);
+
+    const [todayCount] = await db
+      .select({ value: count() })
+      .from(message)
+      .where(gte(message.createdAt, today));
+
+    const [weekCount] = await db
+      .select({ value: count() })
+      .from(message)
+      .where(gte(message.createdAt, weekAgo));
+
+    const [userCount] = await db
+      .select({ value: count() })
+      .from(user);
+
+    return {
+      totalCount: totalCount.value,
+      todayCount: todayCount.value,
+      weekCount: weekCount.value,
+      averagePerUser: userCount.value ? totalCount.value / userCount.value : 0,
     };
   } catch (error) {
     console.error('Failed to get message stats from database');
@@ -415,38 +454,6 @@ export async function getAllMessages() {
       .orderBy(desc(message.createdAt));
   } catch (error) {
     console.error('Failed to get all messages from database');
-    throw error;
-  }
-}
-
-export async function getChatStats() {
-  try {
-    // Get total chats
-    const totalChats = await db.select({ count: count() }).from(chat);
-
-    // Get chats created today
-    const todayChats = await db
-      .select({ count: count() })
-      .from(chat)
-      .where(gte(chat.createdAt, new Date(new Date().setHours(0, 0, 0, 0))));
-
-    // Get unique users with chats for average calculation
-    const uniqueUsers = await db
-      .select({ userId: chat.userId })
-      .from(chat)
-      .groupBy(chat.userId);
-
-    const averagePerUser = uniqueUsers.length > 0
-      ? Number((totalChats[0].count / uniqueUsers.length).toFixed(1))
-      : 0;
-
-    return {
-      totalCount: totalChats[0].count || 0,
-      todayCount: todayChats[0].count || 0,
-      averagePerUser,
-    };
-  } catch (error) {
-    console.error('Failed to get chat stats from database');
     throw error;
   }
 }
