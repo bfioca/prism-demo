@@ -94,7 +94,6 @@ export const {
     },
     async jwt({ token, user, account, trigger }) {
       if (user) {
-        console.log('User in jwt callback:', user);
         // Preserve existing token data and add/update user fields
         return {
           ...token,
@@ -106,7 +105,6 @@ export const {
     },
     async session({ session, token }: { session: Session; token: any }) {
       if (token) {
-        console.log('Token in session callback:', token);
         return {
           ...session,
           user: {

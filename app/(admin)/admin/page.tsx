@@ -77,7 +77,7 @@ export default function AdminDashboard() {
                 />
               </Link>
             </div>
-            <h1 className="text-4xl mb-2 font-bold tracking-tight bg-gradient-to-r from-[#3765D2] via-[#37D1AC] to-[#7444C7] bg-clip-text text-transparent">
+            <h1 className="text-4xl mb-2 font-bold tracking-tight bg-[linear-gradient(90deg,#FF0000_0%,#00FF00_25%,#0000FF_50%,#FF00FF_75%,#FF0000_100%)] bg-clip-text text-transparent">
               Admin Dashboard
             </h1>
           </div>
@@ -90,10 +90,10 @@ export default function AdminDashboard() {
         <div className="flex gap-6 mb-8">
           {/* User Stats Card */}
           <Card className="flex-1 p-6 bg-background/30 backdrop-blur-sm border-border/50 overflow-hidden shadow-lg"
-                style={{ boxShadow: '0 6px 25px #3765D225' }}>
+                style={{ boxShadow: '0 6px 25px #FF1E1E25' }}>
             <div className="flex items-center gap-3 mb-4">
-              <div className="bg-[#3765D2] bg-opacity-10 rounded-full p-2">
-                <Users className="size-5 text-[#3765D2]" />
+              <div className="bg-[#FF1E1E] bg-opacity-10 rounded-full p-2">
+                <Users className="size-5 text-[#FF1E1E]" />
               </div>
               <h3 className="text-base font-medium text-foreground/90">Users</h3>
             </div>
@@ -103,7 +103,7 @@ export default function AdminDashboard() {
               <div className="space-y-6">
                 <div>
                   <div className="flex items-baseline gap-2">
-                    <p className="text-4xl font-medium text-[#3765D2]">{userStats?.totalCount}</p>
+                    <p className="text-4xl font-medium text-[#FF1E1E]">{userStats?.totalCount}</p>
                     <span className="text-sm text-muted-foreground">total</span>
                   </div>
                 </div>
@@ -123,10 +123,10 @@ export default function AdminDashboard() {
 
           {/* Chat Stats Card */}
           <Card className="flex-1 p-6 bg-background/30 backdrop-blur-sm border-border/50 overflow-hidden shadow-lg"
-                style={{ boxShadow: '0 6px 25px #37D1AC25' }}>
+                style={{ boxShadow: '0 6px 25px #4CAF5025' }}>
             <div className="flex items-center gap-3 mb-4">
-              <div className="bg-[#37D1AC] bg-opacity-10 rounded-full p-2">
-                <MessageSquare className="size-5 text-[#37D1AC]" />
+              <div className="bg-[#4CAF50] bg-opacity-10 rounded-full p-2">
+                <MessageSquare className="size-5 text-[#4CAF50]" />
               </div>
               <h3 className="text-base font-medium text-foreground/90">Chats</h3>
             </div>
@@ -136,7 +136,7 @@ export default function AdminDashboard() {
               <div className="space-y-6">
                 <div>
                   <div className="flex items-baseline gap-2">
-                    <p className="text-4xl font-medium text-[#37D1AC]">{chatStats?.totalCount}</p>
+                    <p className="text-4xl font-medium text-[#4CAF50]">{chatStats?.totalCount}</p>
                     <span className="text-sm text-muted-foreground">total</span>
                   </div>
                 </div>
@@ -160,10 +160,10 @@ export default function AdminDashboard() {
 
           {/* Message Stats Card */}
           <Card className="flex-1 p-6 bg-background/30 backdrop-blur-sm border-border/50 overflow-hidden shadow-lg"
-                style={{ boxShadow: '0 6px 25px #7444C725' }}>
+                style={{ boxShadow: '0 6px 25px #9C27B025' }}>
             <div className="flex items-center gap-3 mb-4">
-              <div className="bg-[#7444C7] bg-opacity-10 rounded-full p-2">
-                <MessagesSquare className="size-5 text-[#7444C7]" />
+              <div className="bg-[#9C27B0] bg-opacity-10 rounded-full p-2">
+                <MessagesSquare className="size-5 text-[#9C27B0]" />
               </div>
               <h3 className="text-base font-medium text-foreground/90">Messages</h3>
             </div>
@@ -173,7 +173,7 @@ export default function AdminDashboard() {
               <div className="space-y-6">
                 <div>
                   <div className="flex items-baseline gap-2">
-                    <p className="text-4xl font-medium text-[#7444C7]">{messageStats?.totalCount}</p>
+                    <p className="text-4xl font-medium text-[#9C27B0]">{messageStats?.totalCount}</p>
                     <span className="text-sm text-muted-foreground">total</span>
                   </div>
                 </div>

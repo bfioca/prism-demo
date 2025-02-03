@@ -5,12 +5,6 @@ import { auth } from './app/(auth)/auth';
 export async function middleware(request: NextRequest) {
   const session = await auth();
 
-  console.log('Middleware session check:', {
-    path: request.nextUrl.pathname,
-    hasSession: !!session,
-    sessionData: session
-  });
-
   // Allow public routes
   const isPublicRoute =
     request.nextUrl.pathname.startsWith('/login') ||
