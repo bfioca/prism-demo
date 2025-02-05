@@ -17,6 +17,7 @@ export interface Model {
   description: string;
   restricted: boolean;
   rateLimited: boolean;
+  provider: string;
 }
 
 // Data Stream types

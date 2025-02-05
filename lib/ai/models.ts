@@ -10,6 +10,7 @@ export const models: Array<Model> = [
     description: 'For fast default LLM output',
     restricted: false,
     rateLimited: false,
+    provider: 'openai',
   },
   {
     id: 'gpt-4o',
@@ -18,6 +19,7 @@ export const models: Array<Model> = [
     description: 'For default LLM output',
     restricted: true,
     rateLimited: false,
+    provider: 'openai',
   },
   {
     id: 'o3-mini',
@@ -26,6 +28,16 @@ export const models: Array<Model> = [
     description: 'For OpenAI reasoning',
     restricted: false,
     rateLimited: false,
+    provider: 'openai',
+  },
+  {
+    id: 'mistralai/Mixtral-8x22B-Instruct-v0.1',
+    label: 'Mixtral-8x22B-Instruct-v0.1',
+    apiIdentifier: 'mistralai/Mixtral-8x22B-Instruct-v0.1',
+    description: 'For a more permissive baseline',
+    restricted: false,
+    rateLimited: false,
+    provider: 'together',
   },
   {
     id: 'deepseek-ai/DeepSeek-R1',
@@ -34,6 +46,7 @@ export const models: Array<Model> = [
     description: 'For open source reasoning',
     restricted: false,
     rateLimited: false,
+    provider: 'together',
   },
   // {
   //   id: 'deepseek-r1-distill-llama-70b',
@@ -42,6 +55,7 @@ export const models: Array<Model> = [
   //   description: 'For open source reasoning',
   //   restricted: false,
   //   rateLimited: false,
+  //   provider: 'groq',
   // },
   // {
   //   id: 'o1',
