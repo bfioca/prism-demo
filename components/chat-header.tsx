@@ -18,9 +18,7 @@ function PureChatHeader({
   chatId,
   selectedModelId,
   selectedVisibilityType,
-  isReadonly,
-  selectedMode = 'prism',
-  onModeChange = () => {},
+  isReadonly
 }: {
   chatId: string;
   selectedModelId: string;
@@ -59,8 +57,6 @@ function PureChatHeader({
 
       {!isReadonly && (
         <ModeSelector
-          selectedMode={selectedMode}
-          onModeChange={onModeChange}
           className="order-1 md:order-2"
         />
       )}
