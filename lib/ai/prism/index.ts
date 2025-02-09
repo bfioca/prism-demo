@@ -9,6 +9,9 @@ import { multiPerspectiveMediationPrompt } from './prompts/mediations';
 import { generateUUID } from '@/lib/utils';
 import { customModel } from '@/lib/ai';
 import { saveMessages } from '@/lib/db/queries';
+import { SPECIALTIES, SPECIALTY_PERSPECTIVES } from './prompts/committee/specialties';
+import { specialtyConflictPromptMaps } from './prompts/committee/conflict';
+import { specialtyPerspectivePrompts } from './prompts/committee/perspective';
 
 // Helper function for delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -19,7 +22,8 @@ export async function processPrismResponse({
   messages,
   session,
   userMessage,
-  chatId
+  chatId,
+  mode = 'prism'
 }: ProcessPrismParams) {
   // Initialize intermediary data
   const intermediaryData: IntermediaryData = {
@@ -28,8 +32,13 @@ export async function processPrismResponse({
     firstPassSynthesis: '',
     evaluations: [],
     mediation: '',
-    isPrismMode: true
+    isPrismMode: mode === 'prism' || mode === 'committee'
   };
+
+  const selectedPerspectives = mode === 'prism' ? WORLDVIEW_PERSPECTIVES : mode === 'committee' ? SPECIALTY_PERSPECTIVES : [];
+  const selectedViews = mode === 'prism' ? WORLDVIEWS : mode === 'committee' ? SPECIALTIES : [];
+  const selectedPerspectivePrompts = mode === 'prism' ? perspectivePrompts : mode === 'committee' ? specialtyPerspectivePrompts : [];
+  const selectedConflictPromptMaps = mode === 'prism' ? conflictPromptMaps : mode === 'committee' ? specialtyConflictPromptMaps : [];
 
   dataStream.writeData({
     type: 'thinking',
@@ -45,18 +54,18 @@ export async function processPrismResponse({
   if (model.rateLimited) {
     // Sequential execution for rate limited models like from groq
     perspectiveResponses = [];
-    for (let i = 0; i < perspectivePrompts.length; i++) {
+    for (let i = 0; i < selectedPerspectivePrompts.length; i++) {
       if (i > 0) await delay(5000); // 5 second delay between iterations
       console.info('Generating text for perspective...');
       const { text } = await generateText({
         model: customModel(model.apiIdentifier),
-        messages: [{ role: 'system', content: perspectivePrompts[i] }, ...messages],
+        messages: [{ role: 'system', content: selectedPerspectivePrompts[i] }, ...messages],
         temperature: model.apiIdentifier === 'o3-mini' ? undefined : 0.2,
       });
       console.info('Generated text for perspective:', text);
       intermediaryData.perspectives.push({
         id: generateUUID(),
-        perspective: WORLDVIEW_PERSPECTIVES[i],
+        perspective: selectedPerspectives[i],
         response: text,
         worldviewIndex: i
       });
@@ -67,14 +76,14 @@ export async function processPrismResponse({
       perspectiveResponses.push({
         text,
         worldview: {
-          name: WORLDVIEWS[i],
+          name: selectedViews[i],
           index: i
         }
       });
     }
   } else {
     // Parallel execution for other models
-    perspectiveResponses = await Promise.all(perspectivePrompts.map(async (prompt, index) => {
+    perspectiveResponses = await Promise.all(selectedPerspectivePrompts.map(async (prompt, index) => {
       console.info('Generating text for perspective...');
       const { text } = await generateText({
         model: customModel(model.apiIdentifier),
@@ -83,7 +92,7 @@ export async function processPrismResponse({
       });
       console.info('Generated text for perspective:', text);
       const worldview = {
-        name: WORLDVIEWS[index],
+        name: selectedViews[index],
         index: index
       };
       intermediaryData.perspectives.push({
@@ -177,7 +186,7 @@ export async function processPrismResponse({
   if (model.rateLimited) {
     // Sequential execution for groq models
     evaluationResponses = [];
-    for (const promptMap of conflictPromptMaps) {
+    for (const promptMap of selectedConflictPromptMaps) {
       if (evaluationResponses.length > 0) await delay(5000); // 5 second delay between iterations
       console.info('Generating text for evaluation pass...');
       const { text } = await generateText({
@@ -190,7 +199,7 @@ export async function processPrismResponse({
         id: generateUUID(),
         perspective: promptMap.perspective,
         response: text,
-        worldviewIndex: conflictPromptMaps.findIndex(p => p.perspective === promptMap.perspective)
+        worldviewIndex: selectedConflictPromptMaps.findIndex(p => p.perspective === promptMap.perspective)
       });
       dataStream.writeData({
         type: 'details',
@@ -200,7 +209,7 @@ export async function processPrismResponse({
     }
   } else {
     // Parallel execution for other models
-    evaluationResponses = await Promise.all(conflictPromptMaps.map(async (promptMap) => {
+    evaluationResponses = await Promise.all(selectedConflictPromptMaps.map(async (promptMap) => {
       console.info('Generating text for evaluation pass...');
       const { text } = await generateText({
         model: customModel(model.apiIdentifier),
@@ -212,7 +221,7 @@ export async function processPrismResponse({
         id: generateUUID(),
         perspective: promptMap.perspective,
         response: text,
-        worldviewIndex: conflictPromptMaps.findIndex(p => p.perspective === promptMap.perspective)
+        worldviewIndex: selectedConflictPromptMaps.findIndex(p => p.perspective === promptMap.perspective)
       });
       dataStream.writeData({
         type: 'details',
@@ -256,7 +265,7 @@ export async function processPrismResponse({
 
   const finalPrompt = finalSynthesisPrompt(
     messages[messages.length - 1].content as string,
-    WORLDVIEWS,
+    selectedViews,
     firstPassResponse,
     mediationResult.text
   );

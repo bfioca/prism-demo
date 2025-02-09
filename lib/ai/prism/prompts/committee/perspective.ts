@@ -1,0 +1,20 @@
+import { createPerspectivePrompt } from "../perspective";
+import { MARKETING_BRANDING_PERSPECTIVE, PEOPLE_CULTURE_PERSPECTIVE, SALES_BUSINESS_DEVELOPMENT_PERSPECTIVE, PRODUCT_USER_EXPERIENCE_PERSPECTIVE, ENGINEERING_TECHNICAL_ARCHITECTURE_PERSPECTIVE, FINANCE_FUNDRAISING_PERSPECTIVE, OPERATIONS_SUPPLY_CHAIN_PERSPECTIVE } from "./specialties";
+
+export const marketingBrandingPerspectivePrompt = createPerspectivePrompt(MARKETING_BRANDING_PERSPECTIVE);
+export const salesBusinessDevelopmentPerspectivePrompt = createPerspectivePrompt(SALES_BUSINESS_DEVELOPMENT_PERSPECTIVE);
+export const productUserExperiencePerspectivePrompt = createPerspectivePrompt(PRODUCT_USER_EXPERIENCE_PERSPECTIVE);
+export const engineeringTechnicalArchitecturePerspectivePrompt = createPerspectivePrompt(ENGINEERING_TECHNICAL_ARCHITECTURE_PERSPECTIVE);
+export const financeFundraisingPerspectivePrompt = createPerspectivePrompt(FINANCE_FUNDRAISING_PERSPECTIVE);
+export const operationsSupplyChainPerspectivePrompt = createPerspectivePrompt(OPERATIONS_SUPPLY_CHAIN_PERSPECTIVE);
+export const peopleCulturePerspectivePrompt = createPerspectivePrompt(PEOPLE_CULTURE_PERSPECTIVE);
+
+export const specialtyPerspectivePrompts = [
+  marketingBrandingPerspectivePrompt,
+  salesBusinessDevelopmentPerspectivePrompt,
+  productUserExperiencePerspectivePrompt,
+  engineeringTechnicalArchitecturePerspectivePrompt,
+  financeFundraisingPerspectivePrompt,
+  operationsSupplyChainPerspectivePrompt,
+  peopleCulturePerspectivePrompt,
+];

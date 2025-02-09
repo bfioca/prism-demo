@@ -22,7 +22,12 @@ const modes = [
   {
     id: 'prism',
     label: 'PRISM',
-    description: 'PRISM mode'
+    description: 'PRISM Worldviewmode'
+  },
+  {
+    id: 'committee',
+    label: 'PRISM Business',
+    description: 'PRISM Business Committee mode'
   }
 ] as const;
 
@@ -31,8 +36,8 @@ export function ModeSelector({
   onModeChange,
   className,
 }: {
-  selectedMode: 'prism' | 'chat';
-  onModeChange: (mode: 'prism' | 'chat') => void;
+  selectedMode: 'prism' | 'committee' | 'chat';
+  onModeChange: (mode: 'prism' | 'committee' | 'chat') => void;
 } & React.ComponentProps<typeof Button>) {
   const [open, setOpen] = useState(false);
 

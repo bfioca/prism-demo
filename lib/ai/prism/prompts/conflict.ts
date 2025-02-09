@@ -21,7 +21,7 @@ The following is the output schema for the conflict prompt:
 # First Pass Response:
 `;
 
-function createConflictPrompt(perspective: string): string {
+export function createConflictPrompt(perspective: string): string {
   return CONFLICT_PROMPT_TEMPLATE.replace('<<PERSPECTIVE_PLACEHOLDER>>', perspective);
 }
 

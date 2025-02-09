@@ -33,12 +33,12 @@ export function Chat({
   id: string;
   initialMessages: Array<Message>;
   selectedModelId: string;
-  selectedMode: 'prism' | 'chat';
+  selectedMode: 'prism' | 'chat' | 'committee';
   selectedVisibilityType: VisibilityType;
   isReadonly: boolean;
 }) {
   const { mutate } = useSWRConfig();
-  const [mode, setMode] = useState<'prism' | 'chat'>(initialMode);
+  const [mode, setMode] = useState<'prism' | 'chat' | 'committee'>(initialMode);
   const [attachments, setAttachments] = useState<Array<Attachment>>([]);
   const [error, setError] = useState<{ message: string; retryAfter?: number } | null>(null);
 

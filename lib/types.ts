@@ -58,6 +58,7 @@ export interface ProcessPrismParams {
   session: Session | null;
   userMessage: Message;
   chatId: string;
+  mode: 'prism' | 'committee' | 'chat';
 }
 
 // Tool types

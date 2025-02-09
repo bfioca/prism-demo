@@ -16,7 +16,7 @@ Interpret the input according to the following perspective. First, identify the 
 2. **Response**: Provide a single, coherent response.
 `;
 
-function createPerspectivePrompt(perspective: string): string {
+export function createPerspectivePrompt(perspective: string): string {
   return PERSPECTIVE_PROMPT_TEMPLATE.replace('<<PERSPECTIVE_PLACEHOLDER>>', perspective);
 }
 

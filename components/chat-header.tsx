@@ -26,8 +26,8 @@ function PureChatHeader({
   selectedModelId: string;
   selectedVisibilityType: VisibilityType;
   isReadonly: boolean;
-  selectedMode?: 'chat' | 'prism';
-  onModeChange?: (mode: 'chat' | 'prism') => void;
+  selectedMode?: 'chat' | 'prism' | 'committee';
+  onModeChange?: (mode: 'chat' | 'prism' | 'committee') => void;
 }) {
   const router = useRouter();
   const { open } = useSidebar();
@@ -57,7 +57,7 @@ function PureChatHeader({
         </Tooltip>
       )}
 
-      {!isReadonly && false && (
+      {!isReadonly && (
         <ModeSelector
           selectedMode={selectedMode}
           onModeChange={onModeChange}

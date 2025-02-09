@@ -56,7 +56,7 @@ export async function POST(request: Request) {
     messages,
     modelId,
     mode,
-  }: { id: string; messages: Array<Message>; modelId: string; mode: 'chat' | 'prism' } =
+  }: { id: string; messages: Array<Message>; modelId: string; mode: 'chat' | 'prism' | 'committee' } =
     await request.json();
 
   const session = await auth();
@@ -114,7 +114,7 @@ export async function POST(request: Request) {
     await saveChat({ id, userId: session.user.id, title });
   }
 
-  if (mode === 'prism') {
+  if (mode === 'prism' || mode === 'committee') {
     return createDataStreamResponse({
       onError: (error: unknown) => {
         console.error('Error:', error);
@@ -128,7 +128,8 @@ export async function POST(request: Request) {
           messages,
           session,
           userMessage: userMessageWithId,
-          chatId: id
+          chatId: id,
+          mode
         });
         result.mergeIntoDataStream(dataStream);
       },
