@@ -17,6 +17,11 @@ export async function saveModelId(model: string) {
   cookieStore.set('model-id', model);
 }
 
+export async function saveMode(mode: 'prism' | 'committee' | 'chat') {
+  const cookieStore = await cookies();
+  cookieStore.set('mode', mode);
+}
+
 export async function generateTitleFromUserMessage({
   message,
 }: {
@@ -55,4 +60,9 @@ export async function updateChatVisibility({
   visibility: VisibilityType;
 }) {
   await updateChatVisiblityById({ chatId, visibility });
+}
+
+export async function getMode() {
+  const cookieStore = await cookies();
+  return (cookieStore.get('mode')?.value || 'chat') as 'prism' | 'committee' | 'chat';
 }

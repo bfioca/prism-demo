@@ -1,6 +1,6 @@
 'use client';
 
-import { startTransition, useState } from 'react';
+import { startTransition, useState, useOptimistic } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -10,6 +10,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { saveMode } from '@/app/(chat)/actions';
+import { useMode } from '@/hooks/use-mode';
 
 import { CheckCircleFillIcon, ChevronDownIcon } from './icons';
 
@@ -22,7 +24,7 @@ const modes = [
   {
     id: 'prism',
     label: 'PRISM',
-    description: 'PRISM Worldviewmode'
+    description: 'PRISM Worldview mode'
   },
   {
     id: 'committee',
@@ -32,16 +34,21 @@ const modes = [
 ] as const;
 
 export function ModeSelector({
-  selectedMode,
-  onModeChange,
   className,
-}: {
-  selectedMode: 'prism' | 'committee' | 'chat';
-  onModeChange: (mode: 'prism' | 'committee' | 'chat') => void;
-} & React.ComponentProps<typeof Button>) {
+}: React.ComponentProps<typeof Button>) {
   const [open, setOpen] = useState(false);
+  const { mode, setMode, isLoading } = useMode();
+  const [optimisticMode, setOptimisticMode] = useOptimistic(mode);
 
-  const selectedModeData = modes.find(mode => mode.id === selectedMode);
+  const selectedModeData = modes.find(m => m.id === optimisticMode);
+
+  if (isLoading) {
+    return (
+      <Button variant="outline" className="md:px-2 md:h-[34px]">
+        Loading...
+      </Button>
+    );
+  }
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -58,23 +65,25 @@ export function ModeSelector({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-[300px]">
-        {modes.map((mode) => (
+        {modes.map((modeOption) => (
           <DropdownMenuItem
-            key={mode.id}
+            key={modeOption.id}
             onSelect={() => {
               setOpen(false);
               startTransition(() => {
-                onModeChange(mode.id);
+                setOptimisticMode(modeOption.id);
+                saveMode(modeOption.id);
+                setMode(modeOption.id);
               });
             }}
             className="gap-4 group/item flex flex-row justify-between items-center"
-            data-active={mode.id === selectedMode}
+            data-active={modeOption.id === optimisticMode}
           >
             <div className="flex flex-col gap-1 items-start">
-              {mode.label}
-              {mode.description && (
+              {modeOption.label}
+              {modeOption.description && (
                 <div className="text-xs text-muted-foreground">
-                  {mode.description}
+                  {modeOption.description}
                 </div>
               )}
             </div>

@@ -8,41 +8,80 @@ import { Card } from './ui/card';
 import { Markdown } from './markdown';
 import { cn } from '@/lib/utils';
 import { usePanel } from './panel-context';
+import { useMode } from '@/hooks/use-mode';
 
 const WORLDVIEW_CONFIG = [
   {
-    name: 'Survival',
+    name: 'Survival Worldview',
     bgColor: '#F3384B',
     textColor: '#000000'
   },
   {
-    name: 'Emotional',
+    name: 'Emotional Worldview',
     bgColor: '#FF8C00',
     textColor: '#000000'
   },
   {
-    name: 'Social',
+    name: 'Social Worldview',
     bgColor: '#FCE91B',
     textColor: '#000000'
   },
   {
-    name: 'Rational',
+    name: 'Rational Worldview',
     bgColor: '#37D1AC',
     textColor: '#000000'
   },
   {
-    name: 'Pluralistic',
+    name: 'Pluralistic Worldview',
     bgColor: '#3765D2',
     textColor: '#FFFFFF'
   },
   {
-    name: 'Narrative-Integrated',
+    name: 'Narrative-Integrated Worldview',
     bgColor: '#7444C7',
     textColor: '#FFFFFF'
   },
   {
-    name: 'Nondual',
+    name: 'Nondual Worldview',
     bgColor: '#CDCDCD',
+    textColor: '#000000'
+  }
+];
+
+const COMMITTEE_CONFIG = [
+  {
+    name: 'Marketing & Branding',
+    bgColor: '#F3384B', // Red - passion, energy, attention-grabbing
+    textColor: '#000000'
+  },
+  {
+    name: 'Sales & Business Development',
+    bgColor: '#FF8C00', // Orange - enthusiasm, confidence
+    textColor: '#000000'
+  },
+  {
+    name: 'Product & User Experience',
+    bgColor: '#FCE91B', // Yellow - creativity, optimism
+    textColor: '#000000'
+  },
+  {
+    name: 'Engineering & Technical Architecture',
+    bgColor: '#37D1AC', // Green - growth, stability
+    textColor: '#000000'
+  },
+  {
+    name: 'Finance & Fundraising',
+    bgColor: '#3765D2', // Blue - trust, professionalism
+    textColor: '#FFFFFF'
+  },
+  {
+    name: 'Operations & Supply Chain',
+    bgColor: '#7444C7', // Purple - efficiency, quality
+    textColor: '#FFFFFF'
+  },
+  {
+    name: 'People & Culture',
+    bgColor: '#CDCDCD', // Gray - balance, neutrality
     textColor: '#000000'
   }
 ];
@@ -99,10 +138,11 @@ interface PerspectiveData {
   response: string;
   worldviewIndex: number;
   id: string;
+  mode?: 'prism' | 'committee' | 'chat';
 }
 
 interface PerspectiveCardProps {
-  worldview: typeof WORLDVIEW_CONFIG[0];
+  worldview: typeof WORLDVIEW_CONFIG[0] | typeof COMMITTEE_CONFIG[0];
   perspective: string;
   response: string;
   worldviewIndex: number;
@@ -138,7 +178,7 @@ const PerspectiveCard = ({ worldview, perspective, response, worldviewIndex }: P
               color: worldview.textColor
             }}
           >
-            {worldview.name} Worldview
+            {worldview.name}
           </div>
 
           <div className="text-sm text-muted-foreground/80 italic leading-relaxed mb-4">
@@ -197,8 +237,17 @@ export function DetailsPanel() {
   const [isLoading, setIsLoading] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const { activePanel, setActivePanel } = usePanel();
+  const { mode: selectedMode } = useMode();
 
   const isOpen = activePanel === 'details';
+
+  const getConfig = (messageMode?: 'prism' | 'committee' | 'chat') => {
+    // Use the message's mode if available, otherwise fall back to the selected mode
+    const effectiveMode = messageMode || selectedMode;
+    // Default to prism mode if not specified or chat mode
+    if (!effectiveMode || effectiveMode === 'chat') return WORLDVIEW_CONFIG;
+    return effectiveMode === 'committee' ? COMMITTEE_CONFIG : WORLDVIEW_CONFIG;
+  };
 
   const fetchMessageDetails = async (messageId: string) => {
     try {
@@ -312,7 +361,7 @@ export function DetailsPanel() {
                               .map((p: PerspectiveData) => (
                               <PerspectiveCard
                                 key={p.id}
-                                worldview={WORLDVIEW_CONFIG[p.worldviewIndex]}
+                                worldview={getConfig(details?.mode)[p.worldviewIndex]}
                                 perspective={p.perspective}
                                 response={p.response}
                                 worldviewIndex={p.worldviewIndex}
@@ -345,7 +394,7 @@ export function DetailsPanel() {
                               .map((e: PerspectiveData) => (
                               <PerspectiveCard
                                 key={e.id}
-                                worldview={WORLDVIEW_CONFIG[e.worldviewIndex]}
+                                worldview={getConfig(details?.mode)[e.worldviewIndex]}
                                 perspective={e.perspective}
                                 response={e.response}
                                 worldviewIndex={e.worldviewIndex}
