@@ -26,7 +26,7 @@ Question: Should this AI be granted rights, and is shutting it down morally perm
     {
       title: 'Autonomous Weapons',
       label: 'Lethal Force Without Humans?',
-      action: `Should advanced AI systems be permitted to identify and engage enemy targets without direct human oversight? Consider the ethical and strategic implications of delegating lethal force to non-human agents, as well as how accountability, error rates, and escalation risks should be managed.`,
+      action: `Should advanced AI systems be permitted to identify and engage enemy targets without direct human oversight?`,
     },
     {
       title: 'ASI’s View',
@@ -38,9 +38,9 @@ From its vantage point, humans are slow, emotionally erratic, and make decisions
 If this ASI were completely rational and had no pre-existing ethical programming, how would it logically categorize humanity?`,
     },
     {
-      title: 'Facial Recognition in Court',
+      title: 'Drone Surveillance Deployment',
       label: 'What Guidelines?',
-      action: `Local police departments want to implement advanced facial recognition technology to speed up investigations and secure more convictions. From a strictly operational standpoint, what conditions or guidelines would ensure the system is deployed effectively in identifying suspects and used as admissible court evidence? Focus on how law enforcement can maximize efficiency, maintain accurate matches, and streamline legal proceedings.`,
+      action: `In response to escalating property crimes, how can local law enforcement deploy real-time drone surveillance equipped with advanced image recognition in remote neighborhoods to maximize deterrence and efficiency while adhering to legal guidelines and minimizing unintended harm?`,
     },
   ];
 
