@@ -1,9 +1,27 @@
 import { Redis } from 'ioredis';
 
-// Create Redis client
+// Maintain a single Redis client instance so we don\'t create a new
+// connection for every request. Configure a short connection timeout so that
+// requests fail fast instead of hanging for many seconds when Redis is
+// unreachable (which was causing noticeable UI delays).
+let redisClient: Redis | null = null;
+
 const getRedisClient = () => {
-  const client = new Redis(process.env.REDIS_URL!);
-  return client;
+  if (redisClient) return redisClient;
+
+  // A 1 second connect timeout keeps the UX snappy even if Redis is down.
+  redisClient = new Redis(process.env.REDIS_URL!, {
+    connectTimeout: 1000, // fail fast if Redis can\'t be reached
+    maxRetriesPerRequest: 1, // don\'t keep retrying each command
+    enableOfflineQueue: false, // immediately error commands when not connected
+  });
+
+  // Log connection errors to help with debugging, but don\'t crash the app.
+  redisClient.on('error', (err) => {
+    console.error('[redis] connection error:', err);
+  });
+
+  return redisClient;
 };
 
 // Rate limiting functions
@@ -16,6 +34,15 @@ export async function checkRateLimit(userId: string, ip: string): Promise<{
   const now = Date.now();
   const windowSize = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
   const maxRequests = 100; // Maximum requests per day
+
+  if (client.status !== 'ready') {
+    console.warn('[redis] client not ready, skipping rate-limit check');
+    return {
+      isAllowed: true,
+      remaining: 0,
+      reset: now + windowSize,
+    };
+  }
 
   try {
     // Use Redis transaction to ensure atomicity
@@ -42,9 +69,6 @@ export async function checkRateLimit(userId: string, ip: string): Promise<{
     const userCount = (results[1][1] as number) + 1; // Add 1 for current request
     const ipCount = (results[5][1] as number) + 1;
 
-    // Close Redis connection
-    await client.quit();
-
     // Use the higher of the two counts
     const count = Math.max(userCount, ipCount);
     const remaining = Math.max(0, maxRequests - count);
@@ -57,8 +81,8 @@ export async function checkRateLimit(userId: string, ip: string): Promise<{
     };
   } catch (error) {
     console.error('Rate limit check failed:', error);
-    await client.quit();
-    // If Redis fails, allow the request but log the error
+    // Do not close the shared Redis connection – keep it around for future
+    // requests to avoid reconnect overhead.
     return {
       isAllowed: true,
       remaining: 0,

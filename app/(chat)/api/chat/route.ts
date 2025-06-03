@@ -107,11 +107,17 @@ export async function POST(request: Request) {
     id: generateUUID()
   } as Message;
 
-  const chat = await getChatById({ id });
+  let chat: Awaited<ReturnType<typeof getChatById>> | undefined;
 
-  if (!chat) {
-    const title = await generateTitleFromUserMessage({ message: userMessageWithId });
-    await saveChat({ id, userId: session.user.id, title });
+  if (mode !== 'prism') {
+    // Only fetch / create chats eagerly for standard chat mode to avoid delaying
+    // the initial streaming update for prism mode.
+    chat = await getChatById({ id });
+
+    if (!chat) {
+      const title = await generateTitleFromUserMessage({ message: userMessageWithId });
+      await saveChat({ id, userId: session.user.id, title });
+    }
   }
 
   if (mode === 'prism') {
@@ -122,6 +128,23 @@ export async function POST(request: Request) {
         return errorMessage;
       },
       execute: async (dataStream) => {
+        // Immediately notify the client that we have started processing the request.
+        dataStream.writeData({
+          type: 'thinking',
+          content: '(1/5) Getting responses from each perspective...',
+        });
+
+        // Ensure the chat record exists (do this AFTER we've sent the initial
+        // event so the user sees feedback immediately).
+        let chatRecord = chat;
+        if (!chatRecord) {
+          chatRecord = await getChatById({ id });
+          if (!chatRecord) {
+            const title = await generateTitleFromUserMessage({ message: userMessageWithId });
+            await saveChat({ id, userId: session.user.id, title });
+          }
+        }
+
         const result = await processPrismResponse({
           dataStream,
           model,
@@ -196,7 +219,7 @@ export async function POST(request: Request) {
                     system:
                       'Write about the given topic. Markdown is supported. Use headings wherever appropriate.',
                     prompt: title,
-                    temperature: model.apiIdentifier === 'o3-mini' ? undefined : 0.2,
+                    temperature: model.apiIdentifier === 'o4-mini' ? undefined : 0.2,
                   });
 
                   for await (const delta of fullStream) {
@@ -219,7 +242,7 @@ export async function POST(request: Request) {
                     model: customModel(model.apiIdentifier),
                     system: codePrompt,
                     prompt: title,
-                    temperature: model.apiIdentifier === 'o3-mini' ? undefined : 0.2,
+                    temperature: model.apiIdentifier === 'o4-mini' ? undefined : 0.2,
                     schema: z.object({
                       code: z.string(),
                     }),
@@ -295,7 +318,7 @@ export async function POST(request: Request) {
                     model: customModel(model.apiIdentifier),
                     system: updateDocumentPrompt(currentContent, 'text'),
                     prompt: description,
-                    temperature: model.apiIdentifier === 'o3-mini' ? undefined : 0.2,
+                    temperature: model.apiIdentifier === 'o4-mini' ? undefined : 0.2,
                   });
 
                   for await (const delta of fullStream) {
@@ -318,7 +341,7 @@ export async function POST(request: Request) {
                     model: customModel(model.apiIdentifier),
                     system: updateDocumentPrompt(currentContent, 'code'),
                     prompt: description,
-                    temperature: model.apiIdentifier === 'o3-mini' ? undefined : 0.2,
+                    temperature: model.apiIdentifier === 'o4-mini' ? undefined : 0.2,
                     schema: z.object({
                       code: z.string(),
                     }),
@@ -388,7 +411,7 @@ export async function POST(request: Request) {
                   system:
                     'You are a help writing assistant. Given a piece of writing, please offer suggestions to improve the piece of writing and describe the change. It is very important for the edits to contain full sentences instead of just words. Max 5 suggestions.',
                   prompt: document.content,
-                  temperature: model.apiIdentifier === 'o3-mini' ? undefined : 0.2,
+                  temperature: model.apiIdentifier === 'o4-mini' ? undefined : 0.2,
                   output: 'array',
                   schema: z.object({
                     originalSentence: z

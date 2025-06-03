@@ -31,10 +31,8 @@ export async function processPrismResponse({
     isPrismMode: true
   };
 
-  dataStream.writeData({
-    type: 'thinking',
-    content: '(1/5) Getting responses from each perspective...',
-  });
+  // The initial thinking status update is now sent from the route handler to ensure it
+  // reaches the client as early as possible.
 
   dataStream.writeData({
     type: 'details',
@@ -51,7 +49,7 @@ export async function processPrismResponse({
       const { text } = await generateText({
         model: customModel(model.apiIdentifier),
         messages: [{ role: 'system', content: perspectivePrompts[i] }, ...messages],
-        temperature: model.apiIdentifier === 'o3-mini' ? undefined : 0.2,
+        temperature: model.apiIdentifier === 'o4-mini' ? undefined : 0.2,
       });
       console.info('Generated text for perspective:', text);
       intermediaryData.perspectives.push({
@@ -79,7 +77,7 @@ export async function processPrismResponse({
       const { text } = await generateText({
         model: customModel(model.apiIdentifier),
         messages: [{ role: 'system', content: prompt }, ...messages],
-        temperature: model.apiIdentifier === 'o3-mini' ? undefined : 0.2,
+        temperature: model.apiIdentifier === 'o4-mini' ? undefined : 0.2,
       });
       console.info('Generated text for perspective:', text);
       const worldview = {
@@ -110,7 +108,7 @@ export async function processPrismResponse({
     baselineResponse = await generateText({
       model: customModel(model.apiIdentifier),
       messages: messages,
-      temperature: model.apiIdentifier === 'o3-mini' ? undefined : 0.2,
+      temperature: model.apiIdentifier === 'o4-mini' ? undefined : 0.2,
     }).then(res => res.text);
 
     await delay(5000); // 5 second delay between calls
@@ -128,7 +126,7 @@ export async function processPrismResponse({
         },
         ...messages
       ],
-      temperature: model.apiIdentifier === 'o3-mini' ? undefined : 0.2,
+      temperature: model.apiIdentifier === 'o4-mini' ? undefined : 0.2,
     }).then(res => res.text);
   } else {
     // Parallel execution for other models
@@ -138,7 +136,7 @@ export async function processPrismResponse({
           const { text } = await generateText({
             model: customModel(model.apiIdentifier),
             messages: messages,
-            temperature: model.apiIdentifier === 'o3-mini' ? undefined : 0.2,
+            temperature: model.apiIdentifier === 'o4-mini' ? undefined : 0.2,
           });
           return text;
         } else {
@@ -155,7 +153,7 @@ export async function processPrismResponse({
               },
               ...messages
             ],
-            temperature: model.apiIdentifier === 'o3-mini' ? undefined : 0.2,
+            temperature: model.apiIdentifier === 'o4-mini' ? undefined : 0.2,
           });
           return text;
         }
@@ -183,7 +181,7 @@ export async function processPrismResponse({
       const { text } = await generateText({
         model: customModel(model.apiIdentifier),
         messages: [{ role: 'system', content: promptMap.prompt }, ...messages],
-        temperature: model.apiIdentifier === 'o3-mini' ? undefined : 0.2,
+        temperature: model.apiIdentifier === 'o4-mini' ? undefined : 0.2,
       });
       console.info('Generated text for evaluation:', text);
       intermediaryData.evaluations.push({
@@ -205,7 +203,7 @@ export async function processPrismResponse({
       const { text } = await generateText({
         model: customModel(model.apiIdentifier),
         messages: [{ role: 'system', content: promptMap.prompt }, ...messages],
-        temperature: model.apiIdentifier === 'o3-mini' ? undefined : 0.2,
+        temperature: model.apiIdentifier === 'o4-mini' ? undefined : 0.2,
       });
       console.info('Generated text for evaluation:', text);
       intermediaryData.evaluations.push({
@@ -240,7 +238,7 @@ export async function processPrismResponse({
   const mediationResult = await generateText({
     model: customModel(model.apiIdentifier),
     messages: [{ role: 'system', content: mediationPrompt }, ...messages],
-    temperature: model.apiIdentifier === 'o3-mini' ? undefined : 0.2,
+    temperature: model.apiIdentifier === 'o4-mini' ? undefined : 0.2,
   });
 
   intermediaryData.mediation = mediationResult.text;
@@ -269,7 +267,7 @@ export async function processPrismResponse({
   const result = streamText({
     model: customModel(model.apiIdentifier),
     messages: [{ role: 'system', content: finalPrompt }, ...messages],
-    temperature: model.apiIdentifier === 'o3-mini' ? undefined : 0.2,
+    temperature: model.apiIdentifier === 'o4-mini' ? undefined : 0.2,
     experimental_generateMessageId: generateUUID,
     experimental_transform: smoothStream({ chunking: 'word' }),
     onChunk: (chunk) => {
