@@ -1,9 +1,3 @@
-import type {
-  Attachment,
-  ChatRequestOptions,
-  CreateMessage,
-  Message,
-} from 'ai';
 import { formatDistance } from 'date-fns';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -18,6 +12,13 @@ import useSWR, { useSWRConfig } from 'swr';
 import { useDebounceCallback, useWindowSize } from 'usehooks-ts';
 
 import type { Document, Suggestion, Vote } from '@/lib/db/schema';
+import type {
+  Attachment,
+  LegacyAppend,
+  LegacyHandleSubmit,
+  LegacyReload,
+  Message,
+} from '@/lib/types';
 import { cn, fetcher } from '@/lib/utils';
 
 import { DiffView } from './diffview';
@@ -90,19 +91,9 @@ function PureBlock({
   messages: Array<Message>;
   setMessages: Dispatch<SetStateAction<Array<Message>>>;
   votes: Array<Vote> | undefined;
-  append: (
-    message: Message | CreateMessage,
-    chatRequestOptions?: ChatRequestOptions,
-  ) => Promise<string | null | undefined>;
-  handleSubmit: (
-    event?: {
-      preventDefault?: () => void;
-    },
-    chatRequestOptions?: ChatRequestOptions,
-  ) => void;
-  reload: (
-    chatRequestOptions?: ChatRequestOptions,
-  ) => Promise<string | null | undefined>;
+  append: LegacyAppend;
+  handleSubmit: LegacyHandleSubmit;
+  reload: LegacyReload;
   isReadonly: boolean;
   dataStream: any;
 }) {

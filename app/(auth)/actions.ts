@@ -1,6 +1,6 @@
 'use server';
 
-import { z } from 'zod';
+import { z } from 'zod/v3';
 import { redirect } from 'next/navigation';
 import { AuthError } from 'next-auth';
 

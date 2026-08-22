@@ -1,4 +1,4 @@
-import type { Attachment } from 'ai';
+import type { Attachment } from '@/lib/types';
 
 import { LoaderIcon } from './icons';
 

@@ -1,4 +1,4 @@
-import type { Message } from '@/lib/types';
+import type { LegacyReload, Message } from '@/lib/types';
 import type { Vote } from '@/lib/db/schema';
 import { PreviewMessage, ThinkingMessage } from './message';
 import { useEffect, useRef, useState } from 'react';
@@ -24,7 +24,7 @@ export function Messages({
   votes: Vote[] | undefined;
   isLoading: boolean;
   setMessages: (messages: Message[] | ((messages: Message[]) => Message[])) => void;
-  reload: () => Promise<string | null | undefined>;
+  reload: LegacyReload;
   isReadonly: boolean;
   isBlockVisible: boolean;
   dataStream?: any[];

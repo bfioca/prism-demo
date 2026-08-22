@@ -1,8 +1,7 @@
 import { PreviewMessage, ThinkingMessage } from './message';
 import { useScrollToBottom } from './use-scroll-to-bottom';
 import type { Vote } from '@/lib/db/schema';
-import type { ChatRequestOptions } from 'ai';
-import type { Message } from '@/lib/types';
+import type { LegacyReload, Message } from '@/lib/types';
 import { memo, useEffect, useRef, useState } from 'react';
 import equal from 'fast-deep-equal';
 import { UIBlock } from './block';
@@ -20,9 +19,7 @@ interface BlockMessagesProps {
   setMessages: (
     messages: Message[] | ((messages: Message[]) => Message[]),
   ) => void;
-  reload: (
-    chatRequestOptions?: ChatRequestOptions,
-  ) => Promise<string | null | undefined>;
+  reload: LegacyReload;
   isReadonly: boolean;
   blockStatus: UIBlock['status'];
   dataStream?: any[];

@@ -1,13 +1,57 @@
-import type { Message as BaseMessage } from 'ai';
+import type { ChatRequestOptions, ModelMessage, UIMessage } from 'ai';
 import type { Session } from 'next-auth';
 
 // Re-export DB Message type
 export type { Message as DBMessage } from '@/lib/db/schema';
 
-// Base Message type with Prism data
-export interface Message extends BaseMessage {
+export interface Attachment {
+  name?: string;
+  contentType?: string;
+  url: string;
+}
+
+export interface LegacyToolInvocation {
+  toolCallId: string;
+  toolName: string;
+  args: any;
+  state: 'call' | 'result';
+  result?: any;
+}
+
+export interface DataStreamDelta {
+  type: string;
+  content: unknown;
+}
+
+export type AppDataTypes = {
+  custom: DataStreamDelta;
+};
+
+// Keep the legacy convenience fields while the transport uses AI SDK 6 parts.
+export interface Message extends UIMessage<unknown, AppDataTypes> {
+  content: string;
+  toolInvocations?: LegacyToolInvocation[];
+  experimental_attachments?: Attachment[];
+  annotations?: Array<Record<string, unknown>>;
   prism_data?: IntermediaryData;
 }
+
+export type LegacyCreateMessage = {
+  role: Message['role'];
+  content: string;
+};
+
+export type LegacyAppend = (
+  message: Message | LegacyCreateMessage,
+  options?: ChatRequestOptions,
+) => Promise<void>;
+
+export type LegacyHandleSubmit = (
+  event?: { preventDefault?: () => void },
+  options?: ChatRequestOptions,
+) => void;
+
+export type LegacyReload = (options?: ChatRequestOptions) => Promise<void>;
 
 // Model related types
 export interface Model {
@@ -22,7 +66,7 @@ export interface Model {
 
 // Data Stream types
 export interface DataStream {
-  writeData: (delta: { type: 'thinking' | 'details' | string; content: string | null }) => void;
+  writeData: (delta: DataStreamDelta) => void;
 }
 
 // Prism specific types
@@ -54,9 +98,9 @@ export interface IntermediaryData {
 export interface ProcessPrismParams {
   dataStream: DataStream;
   model: Model;
-  messages: Message[];
+  messages: ModelMessage[];
   session: Session | null;
-  userMessage: Message;
+  userMessage: ModelMessage & { id: string };
   chatId: string;
 }
 

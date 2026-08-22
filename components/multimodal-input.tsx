@@ -1,11 +1,5 @@
 'use client';
 
-import type {
-  Attachment,
-  ChatRequestOptions,
-  CreateMessage,
-  Message,
-} from 'ai';
 import cx from 'classnames';
 import type React from 'react';
 import {
@@ -22,6 +16,12 @@ import { toast } from 'sonner';
 import { useLocalStorage, useWindowSize } from 'usehooks-ts';
 
 import { sanitizeUIMessages } from '@/lib/utils';
+import type {
+  Attachment,
+  LegacyAppend,
+  LegacyHandleSubmit,
+  Message,
+} from '@/lib/types';
 
 import { ArrowUpIcon, PaperclipIcon, StopIcon } from './icons';
 import { PreviewAttachment } from './preview-attachment';
@@ -53,16 +53,8 @@ function PureMultimodalInput({
   setAttachments: Dispatch<SetStateAction<Array<Attachment>>>;
   messages: Array<Message>;
   setMessages: Dispatch<SetStateAction<Array<Message>>>;
-  append: (
-    message: Message | CreateMessage,
-    chatRequestOptions?: ChatRequestOptions,
-  ) => Promise<string | null | undefined>;
-  handleSubmit: (
-    event?: {
-      preventDefault?: () => void;
-    },
-    chatRequestOptions?: ChatRequestOptions,
-  ) => void;
+  append: LegacyAppend;
+  handleSubmit: LegacyHandleSubmit;
   className?: string;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -120,9 +112,7 @@ function PureMultimodalInput({
   const submitForm = useCallback(() => {
     window.history.replaceState({}, '', `/chat/${chatId}`);
 
-    handleSubmit(undefined, {
-      experimental_attachments: attachments,
-    });
+    handleSubmit();
 
     setAttachments([]);
     setLocalStorageInput('');
@@ -132,7 +122,6 @@ function PureMultimodalInput({
       textareaRef.current?.focus();
     }
   }, [
-    attachments,
     handleSubmit,
     setAttachments,
     setLocalStorageInput,

@@ -1,14 +1,15 @@
 import {
-  convertToCoreMessages,
-  createDataStreamResponse,
+  convertToModelMessages,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
   generateText,
   smoothStream,
+  stepCountIs,
   streamObject,
   streamText,
-  type CoreUserMessage
+  type UIMessageStreamWriter,
 } from 'ai';
 import { z } from 'zod';
-import { headers } from 'next/headers';
 
 import { auth } from '@/app/(auth)/auth';
 import { customModel } from '@/lib/ai';
@@ -27,7 +28,13 @@ import {
   saveMessages,
   saveSuggestions,
 } from '@/lib/db/queries';
-import type { Message, AllowedTools, DocumentSuggestion } from '@/lib/types';
+import type {
+  Message,
+  AllowedTools,
+  DataStream,
+  DataStreamDelta,
+  DocumentSuggestion,
+} from '@/lib/types';
 import {
   generateUUID,
   getMostRecentUserMessage,
@@ -49,6 +56,20 @@ const blocksTools: AllowedTools[] = [
 const weatherTools: AllowedTools[] = ['getWeather'];
 
 const allTools: AllowedTools[] = [...blocksTools, ...weatherTools];
+
+function createDataStreamAdapter(
+  writer: UIMessageStreamWriter<Message>,
+): DataStream {
+  return {
+    writeData(delta: DataStreamDelta) {
+      writer.write({
+        type: 'data-custom',
+        data: delta,
+        transient: true,
+      });
+    },
+  };
+}
 
 export async function POST(request: Request) {
   const {
@@ -95,7 +116,7 @@ export async function POST(request: Request) {
     return new Response('Model not found', { status: 404 });
   }
 
-  const coreMessages = convertToCoreMessages(messages);
+  const coreMessages = await convertToModelMessages(messages);
   const userMessage = getMostRecentUserMessage(coreMessages);
 
   if (!userMessage) {
@@ -105,7 +126,7 @@ export async function POST(request: Request) {
   const userMessageWithId = {
     ...userMessage,
     id: generateUUID()
-  } as Message;
+  };
 
   let chat: Awaited<ReturnType<typeof getChatById>> | undefined;
 
@@ -121,13 +142,15 @@ export async function POST(request: Request) {
   }
 
   if (mode === 'prism') {
-    return createDataStreamResponse({
+    const stream = createUIMessageStream<Message>({
+      originalMessages: messages,
       onError: (error: unknown) => {
         console.error('Error:', error);
         const errorMessage = error instanceof Error ? error.message : String(error);
         return errorMessage;
       },
-      execute: async (dataStream) => {
+      execute: async ({ writer }) => {
+        const dataStream = createDataStreamAdapter(writer);
         // Immediately notify the client that we have started processing the request.
         dataStream.writeData({
           type: 'thinking',
@@ -145,31 +168,40 @@ export async function POST(request: Request) {
           }
         }
 
-        const result = await processPrismResponse({
+        const { result, responseMessageId } = await processPrismResponse({
           dataStream,
           model,
-          messages,
+          messages: coreMessages,
           session,
           userMessage: userMessageWithId,
           chatId: id
         });
-        result.mergeIntoDataStream(dataStream);
+        writer.merge(
+          result.toUIMessageStream<Message>({
+            originalMessages: messages,
+            generateMessageId: () => responseMessageId,
+          }),
+        );
       },
     });
+    return createUIMessageStreamResponse({ stream, headers: rateLimitHeaders });
   } else {
     // This is the chat mode from the original source code - selectable in mode-selector.tsx
-    return createDataStreamResponse({
-      execute: (dataStream) => {
+    const stream = createUIMessageStream<Message>({
+      originalMessages: messages,
+      execute: ({ writer }) => {
+        const dataStream = createDataStreamAdapter(writer);
+        const responseMessageId = generateUUID();
         const result = streamText({
           model: customModel(model.apiIdentifier),
           system: systemPrompt,
           messages: coreMessages,
-          maxSteps: 5,
-          experimental_activeTools: allTools,
+          stopWhen: stepCountIs(5),
+          activeTools: allTools,
           tools: {
             getWeather: {
               description: 'Get the current weather at a location',
-              parameters: z.object({
+              inputSchema: z.object({
                 latitude: z.number(),
                 longitude: z.number(),
               }),
@@ -185,7 +217,7 @@ export async function POST(request: Request) {
             createDocument: {
               description:
                 'Create a document for a writing activity. This tool will call other functions that will generate the contents of the document based on the title and kind.',
-              parameters: z.object({
+              inputSchema: z.object({
                 title: z.string(),
                 kind: z.enum(['text', 'code']),
               }),
@@ -226,7 +258,7 @@ export async function POST(request: Request) {
                     const { type } = delta;
 
                     if (type === 'text-delta') {
-                      const { textDelta } = delta;
+                      const { text: textDelta } = delta;
 
                       draftText += textDelta;
                       dataStream.writeData({
@@ -290,7 +322,7 @@ export async function POST(request: Request) {
             },
             updateDocument: {
               description: 'Update a document with the given description.',
-              parameters: z.object({
+              inputSchema: z.object({
                 id: z.string().describe('The ID of the document to update'),
                 description: z
                   .string()
@@ -325,7 +357,7 @@ export async function POST(request: Request) {
                     const { type } = delta;
 
                     if (type === 'text-delta') {
-                      const { textDelta } = delta;
+                      const { text: textDelta } = delta;
 
                       draftText += textDelta;
                       dataStream.writeData({
@@ -388,7 +420,7 @@ export async function POST(request: Request) {
             },
             requestSuggestions: {
               description: 'Request suggestions for a document',
-              parameters: z.object({
+              inputSchema: z.object({
                 documentId: z
                   .string()
                   .describe('The ID of the document to request edits'),
@@ -475,13 +507,10 @@ export async function POST(request: Request) {
                 await saveMessages({
                   messages: responseMessagesWithoutIncompleteToolCalls.map(
                     (message) => {
-                      const messageId = generateUUID();
-
-                      if (message.role === 'assistant') {
-                        dataStream.writeMessageAnnotation({
-                          messageIdFromServer: messageId,
-                        });
-                      }
+                      const messageId =
+                        message.role === 'assistant'
+                          ? responseMessageId
+                          : generateUUID();
 
                       return {
                         id: messageId,
@@ -504,9 +533,15 @@ export async function POST(request: Request) {
           },
         });
 
-        result.mergeIntoDataStream(dataStream);
+        writer.merge(
+          result.toUIMessageStream<Message>({
+            originalMessages: messages,
+            generateMessageId: () => responseMessageId,
+          }),
+        );
       },
     });
+    return createUIMessageStreamResponse({ stream, headers: rateLimitHeaders });
   }
 }
 

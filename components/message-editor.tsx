@@ -1,7 +1,6 @@
 'use client';
 
-import type { ChatRequestOptions } from 'ai';
-import type { Message } from '@/lib/types';
+import type { LegacyReload, Message } from '@/lib/types';
 import { Button } from './ui/button';
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from 'react';
 import { Textarea } from './ui/textarea';
@@ -15,9 +14,7 @@ export type MessageEditorProps = {
   setMessages: (
     messages: Message[] | ((messages: Message[]) => Message[]),
   ) => void;
-  reload: (
-    chatRequestOptions?: ChatRequestOptions,
-  ) => Promise<string | null | undefined>;
+  reload: LegacyReload;
 };
 
 export function MessageEditor({
@@ -85,6 +82,7 @@ export function MessageEditor({
                     const updatedMessage = {
                       ...message,
                       content: draftContent,
+                      parts: [{ type: 'text' as const, text: draftContent }],
                     };
                     return [...messages.slice(0, index), updatedMessage];
                   }
@@ -102,6 +100,7 @@ export function MessageEditor({
                     const updatedMessage = {
                       ...message,
                       content: draftContent,
+                      parts: [{ type: 'text' as const, text: draftContent }],
                     };
                     return [...messages.slice(0, index), updatedMessage];
                   }

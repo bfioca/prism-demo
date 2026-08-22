@@ -2,15 +2,12 @@
 
 import { motion } from 'framer-motion';
 import { Button } from './ui/button';
-import { ChatRequestOptions, CreateMessage, Message } from 'ai';
 import { memo } from 'react';
+import type { LegacyAppend } from '@/lib/types';
 
 interface SuggestedActionsProps {
   chatId: string;
-  append: (
-    message: Message | CreateMessage,
-    chatRequestOptions?: ChatRequestOptions,
-  ) => Promise<string | null | undefined>;
+  append: LegacyAppend;
 }
 
 function PureSuggestedActions({ chatId, append }: SuggestedActionsProps) {

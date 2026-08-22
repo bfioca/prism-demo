@@ -1,6 +1,5 @@
 'use client';
 
-import type { ChatRequestOptions, CreateMessage, Message } from 'ai';
 import cx from 'classnames';
 import {
   AnimatePresence,
@@ -25,6 +24,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { sanitizeUIMessages } from '@/lib/utils';
+import type { LegacyAppend, Message } from '@/lib/types';
 
 import {
   ArrowUpIcon,
@@ -54,10 +54,7 @@ type ToolProps = {
   isToolbarVisible?: boolean;
   setIsToolbarVisible?: Dispatch<SetStateAction<boolean>>;
   isAnimating: boolean;
-  append: (
-    message: Message | CreateMessage,
-    chatRequestOptions?: ChatRequestOptions,
-  ) => Promise<string | null | undefined>;
+  append: LegacyAppend;
 };
 
 const Tool = ({
@@ -182,10 +179,7 @@ const ReadingLevelSelector = ({
 }: {
   setSelectedTool: Dispatch<SetStateAction<string | null>>;
   isAnimating: boolean;
-  append: (
-    message: Message | CreateMessage,
-    chatRequestOptions?: ChatRequestOptions,
-  ) => Promise<string | null | undefined>;
+  append: LegacyAppend;
 }) => {
   const LEVELS = [
     'Elementary',
@@ -341,10 +335,7 @@ export const Tools = ({
   isToolbarVisible: boolean;
   selectedTool: string | null;
   setSelectedTool: Dispatch<SetStateAction<string | null>>;
-  append: (
-    message: Message | CreateMessage,
-    chatRequestOptions?: ChatRequestOptions,
-  ) => Promise<string | null | undefined>;
+  append: LegacyAppend;
   isAnimating: boolean;
   setIsToolbarVisible: Dispatch<SetStateAction<boolean>>;
   blockKind: 'text' | 'code';
@@ -401,10 +392,7 @@ const PureToolbar = ({
   isToolbarVisible: boolean;
   setIsToolbarVisible: Dispatch<SetStateAction<boolean>>;
   isLoading: boolean;
-  append: (
-    message: Message | CreateMessage,
-    chatRequestOptions?: ChatRequestOptions,
-  ) => Promise<string | null | undefined>;
+  append: LegacyAppend;
   stop: () => void;
   setMessages: Dispatch<SetStateAction<Message[]>>;
   blockKind: 'text' | 'code';
