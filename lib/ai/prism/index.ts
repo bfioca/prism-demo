@@ -264,11 +264,11 @@ export async function processPrismResponse({
     await delay(15000);
   }
 
+  const responseMessageId = generateUUID();
   const result = streamText({
     model: customModel(model.apiIdentifier),
     messages: [{ role: 'system', content: finalPrompt }, ...messages],
     temperature: model.apiIdentifier === 'o4-mini' ? undefined : 0.2,
-    experimental_generateMessageId: generateUUID,
     experimental_transform: smoothStream({ chunking: 'word' }),
     onChunk: (chunk) => {
       dataStream.writeData({ type: 'thinking', content: null });
@@ -290,7 +290,7 @@ export async function processPrismResponse({
                 createdAt: new Date(),
               },
               {
-                id: assistantMessage.id,
+                id: responseMessageId,
                 chatId,
                 role: 'assistant',
                 content: assistantMessage.content,
@@ -315,5 +315,5 @@ export async function processPrismResponse({
     },
   });
 
-  return result;
+  return { result, responseMessageId };
 }

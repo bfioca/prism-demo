@@ -1,13 +1,19 @@
 import type {
-  CoreAssistantMessage,
-  CoreMessage,
-  CoreToolMessage,
-  ToolInvocation,
+  AssistantModelMessage,
+  ModelMessage,
+  ToolModelMessage,
+  UIMessage,
 } from 'ai';
+import { isToolUIPart } from 'ai';
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-import type { Message, IntermediaryData } from '@/lib/types';
+import type {
+  Attachment,
+  LegacyToolInvocation,
+  Message,
+  IntermediaryData,
+} from '@/lib/types';
 import type { Message as DBMessage, Document } from '@/lib/db/schema';
 
 export function cn(...inputs: ClassValue[]) {
@@ -55,7 +61,7 @@ function addToolMessageToChat({
   toolMessage,
   messages,
 }: {
-  toolMessage: CoreToolMessage;
+  toolMessage: ToolModelMessage;
   messages: Array<Message>;
 }): Array<Message> {
   return messages.map((message) => {
@@ -64,14 +70,16 @@ function addToolMessageToChat({
         ...message,
         toolInvocations: message.toolInvocations.map((toolInvocation) => {
           const toolResult = toolMessage.content.find(
-            (tool) => tool.toolCallId === toolInvocation.toolCallId,
+            (tool) =>
+              'toolCallId' in tool &&
+              tool.toolCallId === toolInvocation.toolCallId,
           );
 
           if (toolResult) {
             return {
               ...toolInvocation,
               state: 'result',
-              result: toolResult.result,
+              result: 'output' in toolResult ? toolResult.output : undefined,
             };
           }
 
@@ -90,13 +98,13 @@ export function convertToUIMessages(
   return messages.reduce((chatMessages: Array<Message>, message) => {
     if (message.role === 'tool') {
       return addToolMessageToChat({
-        toolMessage: message as CoreToolMessage,
+        toolMessage: message as ToolModelMessage,
         messages: chatMessages,
       });
     }
 
     let textContent = '';
-    const toolInvocations: Array<ToolInvocation> = [];
+    const toolInvocations: Array<LegacyToolInvocation> = [];
 
     if (typeof message.content === 'string') {
       textContent = message.content;
@@ -118,6 +126,27 @@ export function convertToUIMessages(
     chatMessages.push({
       id: message.id,
       role: message.role as Message['role'],
+      parts: [
+        ...(textContent ? [{ type: 'text' as const, text: textContent }] : []),
+        ...toolInvocations.map((tool) =>
+          tool.state === 'result'
+            ? {
+                type: 'dynamic-tool' as const,
+                toolName: tool.toolName,
+                toolCallId: tool.toolCallId,
+                state: 'output-available' as const,
+                input: tool.args,
+                output: tool.result,
+              }
+            : {
+                type: 'dynamic-tool' as const,
+                toolName: tool.toolName,
+                toolCallId: tool.toolCallId,
+                state: 'input-available' as const,
+                input: tool.args,
+              },
+        ),
+      ],
       content: textContent,
       toolInvocations,
       prism_data: message.prism_data as IntermediaryData | undefined,
@@ -128,8 +157,8 @@ export function convertToUIMessages(
 }
 
 export function sanitizeResponseMessages(
-  messages: Array<CoreToolMessage | CoreAssistantMessage>,
-): Array<CoreToolMessage | CoreAssistantMessage> {
+  messages: Array<ToolModelMessage | AssistantModelMessage>,
+): Array<ToolModelMessage | AssistantModelMessage> {
   const toolResultIds: Array<string> = [];
 
   for (const message of messages) {
@@ -167,7 +196,7 @@ export function sanitizeResponseMessages(
 }
 
 export function sanitizeUIMessages(messages: Array<Message>): Array<Message> {
-  const messagesBySanitizedToolInvocations = messages.map((message) => {
+  const messagesBySanitizedToolInvocations = messages.map(normalizeMessage).map((message) => {
     if (message.role !== 'assistant') return message;
 
     if (!message.toolInvocations) return message;
@@ -199,9 +228,45 @@ export function sanitizeUIMessages(messages: Array<Message>): Array<Message> {
   );
 }
 
-export function getMostRecentUserMessage(messages: Array<CoreMessage>) {
+export function getMostRecentUserMessage(messages: Array<ModelMessage>) {
   const userMessages = messages.filter((message) => message.role === 'user');
   return userMessages.at(-1);
+}
+
+export function normalizeMessage(message: UIMessage | Message): Message {
+  let content = '';
+  const experimental_attachments: Attachment[] = [];
+  const toolInvocations: LegacyToolInvocation[] = [];
+
+  for (const part of message.parts as any[]) {
+    if (part.type === 'text') {
+      content += part.text;
+    } else if (part.type === 'file') {
+      experimental_attachments.push({
+        url: part.url,
+        name: part.filename,
+        contentType: part.mediaType,
+      });
+    } else if (part.type === 'dynamic-tool' || part.type.startsWith('tool-')) {
+      toolInvocations.push({
+        toolCallId: part.toolCallId,
+        toolName:
+          part.type === 'dynamic-tool'
+            ? part.toolName
+            : part.type.slice('tool-'.length),
+        args: part.input,
+        state: part.state === 'output-available' ? 'result' : 'call',
+        ...(part.state === 'output-available' ? { result: part.output } : {}),
+      });
+    }
+  }
+
+  return {
+    ...message,
+    content,
+    toolInvocations,
+    experimental_attachments,
+  } as Message;
 }
 
 export function getDocumentTimestampByIndex(
@@ -215,13 +280,7 @@ export function getDocumentTimestampByIndex(
 }
 
 export function getMessageIdFromAnnotations(message: Message) {
-  if (!message.annotations) return message.id;
-
-  const [annotation] = message.annotations;
-  if (!annotation) return message.id;
-
-  // @ts-expect-error messageIdFromServer is not defined in MessageAnnotation
-  return annotation.messageIdFromServer;
+  return message.id;
 }
 
 export function isAdmin(user: { admin?: boolean } | null | undefined): boolean {

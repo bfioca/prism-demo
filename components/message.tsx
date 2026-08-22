@@ -1,12 +1,11 @@
 'use client';
 
-import type { ChatRequestOptions } from 'ai';
 import cx from 'classnames';
 import { AnimatePresence, motion } from 'framer-motion';
 import { memo, useMemo, useState, useEffect } from 'react';
 
 import type { Vote } from '@/lib/db/schema';
-import type { Message } from '@/lib/types';
+import type { LegacyReload, Message } from '@/lib/types';
 
 import { DocumentToolCall, DocumentToolResult } from './document';
 import { PencilEditIcon, SparklesIcon } from './icons';
@@ -51,9 +50,7 @@ const PurePreviewMessage = ({
   setMessages: (
     messages: Message[] | ((messages: Message[]) => Message[]),
   ) => void;
-  reload: (
-    chatRequestOptions?: ChatRequestOptions,
-  ) => Promise<string | null | undefined>;
+  reload: LegacyReload;
   isReadonly: boolean;
 }) => {
   const [mode, setMode] = useState<'view' | 'edit'>('view');

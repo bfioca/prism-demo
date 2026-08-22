@@ -1,6 +1,6 @@
 'use server';
 
-import { type CoreUserMessage, generateText } from 'ai';
+import { generateText, type UserModelMessage } from 'ai';
 import { cookies } from 'next/headers';
 
 import { customModel } from '@/lib/ai';
@@ -10,7 +10,6 @@ import {
   updateChatVisiblityById,
 } from '@/lib/db/queries';
 import { VisibilityType } from '@/components/visibility-selector';
-import { Message } from '@/lib/types';
 
 export async function saveModelId(model: string) {
   const cookieStore = await cookies();
@@ -20,7 +19,7 @@ export async function saveModelId(model: string) {
 export async function generateTitleFromUserMessage({
   message,
 }: {
-  message: Message;
+  message: UserModelMessage;
 }) {
   const { text: title } = await generateText({
     model: customModel('gpt-4o-mini'),

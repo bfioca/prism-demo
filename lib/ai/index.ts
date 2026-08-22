@@ -1,7 +1,7 @@
-import { extractReasoningMiddleware, experimental_wrapLanguageModel as wrapLanguageModel } from 'ai';
+import { extractReasoningMiddleware, wrapLanguageModel } from 'ai';
 import { groq } from '@ai-sdk/groq';
-import { createTogetherAI, togetherai } from '@ai-sdk/togetherai';
-import { createPortkey } from '@portkey-ai/vercel-provider';
+import { togetherai } from '@ai-sdk/togetherai';
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { models } from './models';
 
 const portkeyConfig = {
@@ -13,9 +13,14 @@ const portkeyConfig = {
   },
 };
 
-export const portkey = createPortkey({
-  apiKey: process.env.PORTKEY_API_KEY,
-  config: portkeyConfig,
+export const portkey = createOpenAICompatible({
+  name: 'portkey',
+  baseURL: 'https://api.portkey.ai/v1',
+  headers: {
+    'x-portkey-api-key': process.env.PORTKEY_API_KEY ?? '',
+    'x-portkey-config': JSON.stringify(portkeyConfig),
+  },
+  includeUsage: true,
 });
 
 import { customMiddleware } from './custom-middleware';

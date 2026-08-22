@@ -1,16 +1,23 @@
 'use client';
 
-import type { Attachment } from 'ai';
-import { useChat } from 'ai/react';
+import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport, type CreateUIMessage } from 'ai';
 import useSWR, { useSWRConfig } from 'swr';
 import { useState } from 'react';
 
-import type { Message } from '@/lib/types';
+import type {
+  Attachment,
+  DataStreamDelta,
+  LegacyAppend,
+  LegacyHandleSubmit,
+  LegacyReload,
+  Message,
+} from '@/lib/types';
 import type { VisibilityType } from '@/components/visibility-selector';
 
 import { ChatHeader } from '@/components/chat-header';
 import type { Vote } from '@/lib/db/schema';
-import { fetcher } from '@/lib/utils';
+import { fetcher, normalizeMessage } from '@/lib/utils';
 
 import { Block } from './block';
 import { MultimodalInput } from './multimodal-input';
@@ -42,22 +49,31 @@ export function Chat({
   const [attachments, setAttachments] = useState<Array<Attachment>>([]);
   const [error, setError] = useState<{ message: string; retryAfter?: number } | null>(null);
 
+  const [input, setInput] = useState('');
+  const [dataStream, setDataStream] = useState<DataStreamDelta[]>([]);
+
   const {
     messages: rawMessages,
     setMessages: setRawMessages,
-    handleSubmit,
-    input,
-    setInput,
-    append,
-    isLoading,
+    sendMessage,
+    status,
     stop,
-    reload,
-    data: dataStream,
-  } = useChat({
+    regenerate,
+  } = useChat<Message>({
     id,
-    body: { id, modelId: selectedModelId, mode: mode },
-    initialMessages,
+    messages: initialMessages,
+    transport: new DefaultChatTransport<Message>({
+      api: '/api/chat',
+      prepareSendMessagesRequest: ({ messages }) => ({
+        body: { id, messages, modelId: selectedModelId, mode },
+      }),
+    }),
     experimental_throttle: 100,
+    onData: (part) => {
+      if (part.type === 'data-custom') {
+        setDataStream((current) => [...current, part.data]);
+      }
+    },
     onFinish: () => {
       mutate('/api/history');
     },
@@ -77,6 +93,45 @@ export function Chat({
     }
   });
 
+  const isLoading = status === 'submitted' || status === 'streaming';
+
+  const createUserMessage = (
+    content: string,
+    files: Attachment[] = [],
+  ): CreateUIMessage<Message> => ({
+    role: 'user',
+    content,
+    parts: [
+      { type: 'text', text: content },
+      ...files.map((file) => ({
+        type: 'file' as const,
+        url: file.url,
+        filename: file.name,
+        mediaType: file.contentType || 'application/octet-stream',
+      })),
+    ],
+  });
+
+  const append: LegacyAppend = async (message, options) => {
+    await sendMessage(
+      'parts' in message
+        ? message
+        : createUserMessage(message.content),
+      options,
+    );
+  };
+
+  const handleSubmit: LegacyHandleSubmit = (event, options) => {
+    event?.preventDefault?.();
+    if (!input.trim() && attachments.length === 0) return;
+    void sendMessage(createUserMessage(input, attachments), options);
+    setInput('');
+  };
+
+  const reload: LegacyReload = async (options) => {
+    await regenerate(options);
+  };
+
   // Clear error when input changes
   const handleInputChange = (value: string) => {
     if (error) setError(null);
@@ -84,15 +139,7 @@ export function Chat({
   };
 
   // Process messages to extract key assumptions
-  const messages = rawMessages.map((message) => {
-    if (message.role === 'assistant' && message.content) {
-      return {
-        ...message,
-        content: message.content // Keep the original content
-      };
-    }
-    return message;
-  });
+  const messages = rawMessages.map(normalizeMessage);
 
   const { data: votes } = useSWR<Array<Vote>>(
     `/api/vote?chatId=${id}`,
